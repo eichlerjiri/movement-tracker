@@ -11,7 +11,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 
 public class TrackingService extends Service {
 
@@ -27,20 +26,20 @@ public class TrackingService extends Service {
 
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            m.setStatus("Missing permissions for location service");
+            m.setLocationStatus("Missing permissions for location service");
             return;
         }
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
-            m.setStatus("Location service not available");
+            m.setLocationStatus("Location service not available");
             return;
         }
 
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                m.setLastLocation(location);
+                m.locationArrived(location);
             }
 
             @Override
@@ -60,7 +59,7 @@ public class TrackingService extends Service {
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
-        m.setStatus("Receiving locations");
+        m.setLocationStatus("Receiving locations");
     }
 
     @Override

@@ -1,6 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Movement Tracker</string>
-    <string name="recording">Recording</string>
-    <string name="history">History</string>
-</resources>
+<resources />
