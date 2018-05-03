@@ -12,6 +12,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
+import eichlerjiri.movementtracker.utils.Failure;
+
 public class TrackingService extends Service {
 
     private Model m;
@@ -24,22 +26,42 @@ public class TrackingService extends Service {
         m = Model.getInstance();
         m.registerTrackingService(this);
 
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            m.setLocationStatus("Missing permissions for location service");
-            return;
+        try {
+            doCreate();
+        } catch (Failure ignored) {
         }
+    }
 
+    @Override
+    public void onDestroy() {
+        m.unregisterTrackingService();
+
+        locationManager.removeUpdates(locationListener);
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    private void doCreate() throws Failure {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
-            m.setLocationStatus("Location service not available");
-            return;
+            throw new Failure("Location service not available.");
+        }
+
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            throw new Failure("Missing permissions for location service.");
         }
 
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                m.locationArrived(location);
+                try {
+                    m.locationArrived(location);
+                } catch (Failure ignored) {
+                }
             }
 
             @Override
@@ -58,21 +80,5 @@ public class TrackingService extends Service {
         locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, locationListener);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-        m.setLocationStatus("Receiving locations");
-    }
-
-    @Override
-    public void onDestroy() {
-        m.unregisterTrackingService();
-
-        if (locationListener != null) {
-            locationManager.removeUpdates(locationListener);
-        }
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
     }
 }

@@ -7,14 +7,15 @@ import android.view.View;
 import android.widget.Button;
 
 import eichlerjiri.movementtracker.Model;
+import eichlerjiri.movementtracker.utils.Failure;
 
 public class MovementTypeButton extends Button {
 
     private final Model m;
     private final Drawable originalBackground;
 
-    public MovementTypeButton(Context context, final String movementType) {
-        super(context);
+    public MovementTypeButton(final Context c, final String movementType) {
+        super(c);
         m = Model.getInstance();
 
         originalBackground = getBackground();
@@ -23,21 +24,27 @@ public class MovementTypeButton extends Button {
         setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String activeRecordingType = m.getActiveRecordingType();
-
-                if (!activeRecordingType.isEmpty()) {
-                    m.stopRecording();
-                }
-
-                if (!activeRecordingType.equals(movementType)) {
-                    if (m.startRecording(movementType)) {
-                        setBackgroundColor(Color.GREEN);
-                    }
+                try {
+                    handleClick(c, v, movementType);
+                } catch (Failure ignored) {
                 }
             }
         });
 
         if (m.getActiveRecordingType().equals(movementType)) {
+            setBackgroundColor(Color.GREEN);
+        }
+    }
+
+    private void handleClick(Context c, View v, String movementType) throws Failure {
+        String activeRecordingType = m.getActiveRecordingType();
+
+        if (!activeRecordingType.isEmpty()) {
+            m.stopRecording();
+        }
+
+        if (!activeRecordingType.equals(movementType)) {
+            m.startRecording(movementType);
             setBackgroundColor(Color.GREEN);
         }
     }
