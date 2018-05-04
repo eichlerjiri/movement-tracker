@@ -24,6 +24,8 @@ public class Model {
     private Location lastLocation;
     private long activeRecording;
     private String activeRecordingType = "";
+    private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
+    private boolean receivingLocations;
 
     public void registerTrackingService(TrackingService service) {
         trackingService = service;
@@ -76,31 +78,69 @@ public class Model {
         return activeRecordingType;
     }
 
+    public ArrayList<MovementTracker> getStartedMovementTrackers() {
+        return startedMovementTrackers;
+    }
+
     public void locationArrived(Location location) throws Failure {
+        // nepouzivam location cas, zajima me soucasny cas zarizeni
+        getDatabase().saveLocation(System.currentTimeMillis(), location.getLatitude(), location.getLongitude());
         lastLocation = location;
+
         for (MovementTracker movementTracker : movementTrackers) {
             movementTracker.lastLocationUpdated();
         }
-
-        // nepouzivam location cas, zajima me soucasny cas zarizeni
-        getDatabase().saveLocation(System.currentTimeMillis(), location.getLatitude(), location.getLongitude());
     }
 
     public void startRecording(String movementType) throws Failure {
         activeRecording = getDatabase().startRecording(System.currentTimeMillis(), movementType);
         activeRecordingType = movementType;
+
+        refreshReceiving();
+
+        if (trackingService != null) {
+            trackingService.startRecording();
+        }
     }
 
     public void stopRecording() throws Failure {
-        if (activeRecording == 0) {
-            return;
-        }
-
         getDatabase().stopRecording(System.currentTimeMillis(), activeRecording);
         activeRecording = 0;
         activeRecordingType = "";
+
+        refreshReceiving();
+
         for (MovementTracker movementTracker : movementTrackers) {
             movementTracker.recordingStopped();
+        }
+        if (trackingService != null) {
+            trackingService.stopRecording();
+        }
+    }
+
+    public void startedMovementTracker(MovementTracker movementTracker) {
+        startedMovementTrackers.add(movementTracker);
+        refreshReceiving();
+    }
+
+    public void stoppedMovementTracker(MovementTracker movementTracker) {
+        startedMovementTrackers.remove(movementTracker);
+        refreshReceiving();
+    }
+
+    private void refreshReceiving() {
+        boolean requested = !startedMovementTrackers.isEmpty() || !activeRecordingType.isEmpty();
+
+        if (requested && !receivingLocations) {
+            receivingLocations = true;
+            if (trackingService != null) {
+                trackingService.startReceiving();
+            }
+        } else if (!requested && receivingLocations) {
+            receivingLocations = false;
+            if (trackingService != null) {
+                trackingService.stopReceiving();
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 package eichlerjiri.movementtracker;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -20,6 +23,9 @@ public class TrackingService extends Service {
 
     private LocationManager locationManager;
     private LocationListener locationListener;
+
+    private boolean notificationsStarted;
+    private int notificationCounter;
 
     @Override
     public void onCreate() {
@@ -35,24 +41,17 @@ public class TrackingService extends Service {
     @Override
     public void onDestroy() {
         m.unregisterTrackingService();
-
-        locationManager.removeUpdates(locationListener);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return new Binder();
     }
 
     private void doCreate() throws Failure {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
             throw new Failure("Location service not available.");
-        }
-
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            throw new Failure("Missing permissions for location service.");
         }
 
         locationListener = new LocationListener() {
@@ -76,9 +75,44 @@ public class TrackingService extends Service {
             public void onProviderDisabled(String provider) {
             }
         };
+    }
+
+    public void startReceiving() {
+        try {
+            doStartReceiving();
+        } catch (Failure ignored) {
+        }
+    }
+
+    private void doStartReceiving() throws Failure {
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            throw new Failure("Missing permissions for location service.");
+        }
 
         locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, locationListener);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+    }
+
+    public void stopReceiving() {
+        locationManager.removeUpdates(locationListener);
+    }
+
+    public void startRecording() {
+        Intent notificationIntent = new Intent(this, MovementTracker.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        Notification notification = new Notification.Builder(this)
+                .setContentTitle("Recording")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pendingIntent)
+                .getNotification();
+
+        startForeground(++notificationCounter, notification);
+    }
+
+    public void stopRecording() {
+        stopForeground(true);
     }
 }

@@ -4,11 +4,14 @@ import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.AdapterView;
@@ -36,6 +39,18 @@ public class MovementTracker extends Activity {
     private LinearLayout historyView;
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
+    private boolean bound;
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,10 +58,12 @@ public class MovementTracker extends Activity {
         m.registerMovementTracker(this);
 
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
+                != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
         } else {
-            startService(new Intent(this, TrackingService.class));
+            Intent intent = new Intent(this, TrackingService.class);
+            startService(intent);
+            bound = bindService(intent, serviceConnection, 0);
         }
 
         recordingView = (LinearLayout) getLayoutInflater().inflate(R.layout.recording, null);
@@ -102,6 +119,25 @@ public class MovementTracker extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         m.unregisterMovementTracker(this);
+
+        if (bound) {
+            unbindService(serviceConnection);
+            bound = false;
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        m.startedMovementTracker(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        m.stoppedMovementTracker(this);
     }
 
     @Override
