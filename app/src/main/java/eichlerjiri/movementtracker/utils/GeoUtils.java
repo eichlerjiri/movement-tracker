@@ -8,7 +8,11 @@ public class GeoUtils {
         double lat2Rad = deg2rad(lat2);
 
         double d = Math.sin(lat1Rad) * Math.sin(lat2Rad) + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.cos(thetaRad);
-        return rad2deg(Math.acos(d)) * 60 * 1.1515 * 1.609344 * 1000;
+        double ret = rad2deg(Math.acos(d)) * 60 * 1.1515 * 1.609344 * 1000;
+        if (Double.isNaN(ret)) {
+            return 0;
+        }
+        return ret;
     }
 
     private static double deg2rad(double deg) {

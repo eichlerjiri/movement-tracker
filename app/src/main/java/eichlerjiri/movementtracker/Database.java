@@ -21,23 +21,31 @@ public class Database {
         sqlite = new SQLiteOpenHelper(Model.getInstance().getAnyContext(), "movement-tracker", null, 1) {
             @Override
             public void onCreate(SQLiteDatabase db) {
-                db.execSQL("CREATE TABLE location(id INTEGER PRIMARY KEY," +
-                        "ts INTEGER," +
-                        "lat DOUBLE," +
-                        "lon DOUBLE)"
-                );
-                db.execSQL("CREATE TABLE recording(id INTEGER PRIMARY KEY," +
-                        "ts_start INTEGER," +
-                        "ts_end INTEGER," +
-                        "movement_type VARCHAR(20))"
-                );
+                createDatabase(db);
             }
 
             @Override
             public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-                Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
+                upgradeDatabase(db, oldVersion, newVersion);
             }
         }.getWritableDatabase();
+    }
+
+    private void createDatabase(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE location(id INTEGER PRIMARY KEY," +
+                "ts INTEGER," +
+                "lat DOUBLE," +
+                "lon DOUBLE)"
+        );
+        db.execSQL("CREATE TABLE recording(id INTEGER PRIMARY KEY," +
+                "ts_start INTEGER," +
+                "ts_end INTEGER," +
+                "movement_type VARCHAR(20))"
+        );
+    }
+
+    private void upgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
+        Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
     }
 
     public void saveLocation(long timestamp, double lat, double lon) throws Failure {

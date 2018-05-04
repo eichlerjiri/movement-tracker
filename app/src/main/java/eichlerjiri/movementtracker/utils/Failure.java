@@ -10,16 +10,15 @@ public class Failure extends Exception {
 
     public Failure(String msg) {
         super(msg);
-        try {
-            displayDialog();
-        } catch (Failure e) {
-            Log.e("Failure", e.getMessage(), e);
-            stopApplication();
-        }
+        tryDisplayDialog();
     }
 
     public Failure(Throwable t) {
         super(t);
+        tryDisplayDialog();
+    }
+
+    private void tryDisplayDialog() {
         try {
             displayDialog();
         } catch (Failure e) {

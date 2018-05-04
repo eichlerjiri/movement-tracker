@@ -3,12 +3,11 @@ package eichlerjiri.movementtracker;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -102,7 +101,6 @@ public class MovementDetail extends Activity {
 
     private void doCreate() throws Failure {
         LinearLayout detailView = (LinearLayout) getLayoutInflater().inflate(R.layout.detail, null);
-        detailView.addView(mapView);
         setContentView(detailView);
 
         ActionBar actionBar = getActionBar();
@@ -110,66 +108,84 @@ public class MovementDetail extends Activity {
 
         TextView tv = detailView.findViewById(R.id.detailText);
 
-        Bundle b = getIntent().getExtras();
-        if (b == null) {
-            tv.setText("Detail not available");
-            return;
-        }
-
-        long id = b.getLong("id");
-        if (id <= 0) {
-            tv.setText("Detail not available");
-            return;
-        }
-
-        HistoryItem item = m.getDatabase().getHistoryItem(id);
+        HistoryItem item = getHistoryItem();
         if (item == null) {
             tv.setText("Detail not available");
             return;
         }
 
-        long duration = item.getTsTo() - item.getTsFrom();
-        double distance = 0.0;
-
         final ArrayList<LocationDb> locations = m.getDatabase().getLocations(item.getTsFrom(), item.getTsTo());
 
-        LocationDb prev = null;
-        for (LocationDb location : locations) {
-            if (prev != null) {
-                distance += GeoUtils.distance(prev.getLat(), prev.getLon(), location.getLat(), location.getLon());
-            }
-            prev = location;
-        }
+        long duration = item.getTsTo() - item.getTsFrom();
+        double distance = computeDistance(locations);
 
-        double avgSpeed = -1;
-        if (duration > 0) {
-            avgSpeed = distance / (duration / 1000.0);
-        }
-
-        SimpleDateFormat formatter = new SimpleDateFormat("d.M.yyyy HH:mm", Locale.US);
-
-        String text = "from: " + formatter.format(new Date(item.getTsFrom())) + "\n" +
-                "to: " + formatter.format(new Date(item.getTsTo())) + "\n" +
+        String text = "from: " + formatDate(item.getTsFrom()) + "\n" +
+                "to: " + formatDate(item.getTsTo()) + "\n" +
                 "locations: " + locations.size() + "\n" +
                 "type: " + item.getMovementType() + "\n" +
                 "duration: " + formatDuration(duration) + "\n" +
                 "distance: " + formatDistance(distance) + "\n";
 
-        if (avgSpeed >= 0) {
+        if (duration > 0) {
+            double avgSpeed = distance / (duration / 1000.0);
             text += "avg. speed: " + formatSpeed(avgSpeed) + "\n";
         }
 
         tv.setText(text);
 
+        if (locations.isEmpty()) {
+            return;
+        }
+
+        detailView.addView(mapView);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
-            public void onMapReady(GoogleMap googleMap) {
-                if (locations.isEmpty()) {
-                    return;
-                }
-                drawLine(googleMap, locations);
+            public void onMapReady(final GoogleMap googleMap) {
+                waitForViewToBeReady(new Runnable() {
+                    @Override
+                    public void run() {
+                        drawLine(googleMap, locations);
+                    }
+                });
             }
         });
+    }
+
+    private HistoryItem getHistoryItem() throws Failure {
+        Bundle b = getIntent().getExtras();
+        if (b != null) {
+            long id = b.getLong("id");
+            if (id > 0) {
+                return m.getDatabase().getHistoryItem(id);
+            }
+        }
+        return null;
+    }
+
+    private double computeDistance(ArrayList<LocationDb> locations) {
+        double ret = 0;
+        LocationDb prev = null;
+        for (LocationDb location : locations) {
+            if (prev != null) {
+                ret += GeoUtils.distance(prev.getLat(), prev.getLon(), location.getLat(), location.getLon());
+            }
+            prev = location;
+        }
+        return ret;
+    }
+
+    private void waitForViewToBeReady(final Runnable callback) {
+        if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
+            callback.run();
+        } else {
+            mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    callback.run();
+                }
+            });
+        }
     }
 
     private void drawLine(GoogleMap googleMap, ArrayList<LocationDb> locations) {
@@ -180,7 +196,6 @@ public class MovementDetail extends Activity {
 
         PolylineOptions polyline = new PolylineOptions();
         for (LocationDb location : locations) {
-            // TODO fix longitude +-180 degrees
             minLat = Math.min(location.getLat(), minLat);
             minLon = Math.min(location.getLon(), minLon);
             maxLat = Math.max(location.getLat(), maxLat);
@@ -192,10 +207,14 @@ public class MovementDetail extends Activity {
 
         LatLng southwest = new LatLng(minLat, minLon);
         LatLng northeast = new LatLng(maxLat, maxLon);
-        if (southwest.equals(northeast)) {
-            return;
-        }
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(southwest, northeast), 0));
+
+        int padding = (int) (mapView.getWidth() * 0.1f);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(southwest, northeast), padding));
+    }
+
+    private String formatDate(long millis) {
+        SimpleDateFormat formatter = new SimpleDateFormat("d.M.yyyy HH:mm", Locale.US);
+        return formatter.format(new Date(millis));
     }
 
     private String formatDuration(long millis) {

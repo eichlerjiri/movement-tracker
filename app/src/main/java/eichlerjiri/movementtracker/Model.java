@@ -92,13 +92,15 @@ public class Model {
     }
 
     public void stopRecording() throws Failure {
-        if (activeRecording > 0) {
-            getDatabase().stopRecording(System.currentTimeMillis(), activeRecording);
-            activeRecording = 0;
-            activeRecordingType = "";
-            for (MovementTracker movementTracker : movementTrackers) {
-                movementTracker.recordingStopped();
-            }
+        if (activeRecording == 0) {
+            return;
+        }
+
+        getDatabase().stopRecording(System.currentTimeMillis(), activeRecording);
+        activeRecording = 0;
+        activeRecordingType = "";
+        for (MovementTracker movementTracker : movementTrackers) {
+            movementTracker.recordingStopped();
         }
     }
 }

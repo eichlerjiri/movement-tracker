@@ -43,7 +43,7 @@ public class MovementTracker extends Activity {
         m.registerMovementTracker(this);
 
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+                == PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
         } else {
             startService(new Intent(this, TrackingService.class));
@@ -113,6 +113,18 @@ public class MovementTracker extends Activity {
         }
     }
 
+    private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
+        for (int i = 0; i < permissions.length; i++) {
+            if (Manifest.permission.ACCESS_FINE_LOCATION.equals(permissions[i])) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    throw new Failure("Permission to location service rejected.");
+                }
+                startService(new Intent(this, TrackingService.class));
+                break;
+            }
+        }
+    }
+
     private View prepareHistoryView() throws Failure {
         if (historyView == null) {
             historyView = (LinearLayout) getLayoutInflater().inflate(R.layout.history, null);
@@ -138,22 +150,9 @@ public class MovementTracker extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MovementTracker.this, MovementDetail.class);
                 intent.putExtra("id", historyItems.get(position).getId());
-
                 startActivity(intent);
             }
         });
-    }
-
-    private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
-        for (int i = 0; i < permissions.length; i++) {
-            if (Manifest.permission.ACCESS_FINE_LOCATION.equals(permissions[i])) {
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    startService(new Intent(this, TrackingService.class));
-                } else {
-                    throw new Failure("Permission to location service rejected.");
-                }
-            }
-        }
     }
 
     public void lastLocationUpdated() {
@@ -161,17 +160,14 @@ public class MovementTracker extends Activity {
     }
 
     private void updateText() {
-        Location l = m.getLastLocation();
-
-        String ret = "";
-        if (l != null) {
-            ret += "Location: " + l.getProvider() + " " + l.getLatitude() + " " + l.getLongitude() + "\n";
-        } else {
-            ret += "Location: not yet obtained";
-        }
-
         TextView tv = recordingView.findViewById(R.id.text);
-        tv.setText(ret);
+
+        Location l = m.getLastLocation();
+        if (l != null) {
+            tv.setText("Location: " + l.getProvider() + " " + l.getLatitude() + " " + l.getLongitude() + "\n");
+        } else {
+            tv.setText("Location: not yet obtained");
+        }
     }
 
     public void recordingStopped() throws Failure {
