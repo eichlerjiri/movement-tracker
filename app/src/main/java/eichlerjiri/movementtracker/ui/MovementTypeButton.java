@@ -1,6 +1,8 @@
 package eichlerjiri.movementtracker.ui;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.View;
@@ -36,17 +38,37 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void handleClick(String movementType) throws Failure {
-        String activeRecordingType = m.getActiveRecordingType();
+    private void handleClick(final String movementType) throws Failure {
+        final String activeRecordingType = m.getActiveRecordingType();
 
-        if (!activeRecordingType.isEmpty()) {
-            m.stopRecording();
-        }
+        if (activeRecordingType.isEmpty()) {
+            startRecording(movementType);
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(Model.getInstance().getAnyContext())
+                    .setMessage("Really stop " + activeRecordingType + " recording?")
+                    .setTitle("Stop recording?");
 
-        if (!activeRecordingType.equals(movementType)) {
-            m.startRecording(movementType);
-            setBackgroundColor(Color.GREEN);
+            AlertDialog alertDialog = builder.create();
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            try {
+                                m.stopRecording();
+                                if (!movementType.equals(activeRecordingType)) {
+                                    startRecording(movementType);
+                                }
+                            } catch (Failure ignored) {
+                            }
+                        }
+                    });
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
+            alertDialog.show();
         }
+    }
+
+    private void startRecording(String movementType) throws Failure {
+        m.startRecording(movementType);
+        setBackgroundColor(Color.GREEN);
     }
 
     public void resetBackground() {

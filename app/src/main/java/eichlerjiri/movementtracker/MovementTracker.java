@@ -28,6 +28,8 @@ import java.util.Locale;
 import eichlerjiri.movementtracker.db.HistoryItem;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.utils.Failure;
+import eichlerjiri.movementtracker.utils.FormatUtils;
+import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class MovementTracker extends Activity {
 
@@ -109,8 +111,9 @@ public class MovementTracker extends Activity {
 
         recordingView = (LinearLayout) getLayoutInflater().inflate(R.layout.recording, null);
 
-        buttons.add(new MovementTypeButton(this, "bike"));
         buttons.add(new MovementTypeButton(this, "walk"));
+        buttons.add(new MovementTypeButton(this, "run"));
+        buttons.add(new MovementTypeButton(this, "bike"));
 
         for (MovementTypeButton button : buttons) {
             recordingView.addView(button);
@@ -207,20 +210,44 @@ public class MovementTracker extends Activity {
     }
 
     private void updateText() {
-        TextView tv = recordingView.findViewById(R.id.text);
+        String text;
 
         Location l = m.getLastLocation();
         if (l != null) {
-            tv.setText("Location: " + l.getProvider() + " " + l.getLatitude() + " " + l.getLongitude() + "\n");
+            text = "GPS: " + l.getLatitude() + " " + l.getLongitude();
         } else {
-            tv.setText("Location: not yet obtained");
+            text = "GPS: not yet obtained";
         }
+
+        if (!m.getActiveRecordingType().isEmpty()) {
+            long duration = m.getActiveTsTo() - m.getActiveTsFrom();
+
+            text += "\nfrom: " + FormatUtils.formatDate(m.getActiveTsFrom()) + "\n" +
+                    "to: " + FormatUtils.formatDate(m.getActiveTsTo()) + "\n" +
+                    "locations: " + m.getActiveLocations() + "\n" +
+                    "duration: " + FormatUtils.formatDuration(duration) + "\n" +
+                    "distance: " + FormatUtils.formatDistance(m.getActiveDistance());
+
+            double avgSpeed = GeoUtils.avgSpeed(m.getActiveDistance(), duration);
+            if (avgSpeed != 0.0) {
+                text += "\navg. speed: " + FormatUtils.formatSpeed(avgSpeed);
+            }
+        }
+
+        TextView tv = recordingView.findViewById(R.id.text);
+        tv.setText(text);
+    }
+
+    public void recordingStarted() {
+        updateText();
     }
 
     public void recordingStopped() throws Failure {
         for (MovementTypeButton button : buttons) {
             button.resetBackground();
         }
+
+        updateText();
 
         if (historyView != null) {
             loadHistoryList();

@@ -15,6 +15,13 @@ public class GeoUtils {
         return ret;
     }
 
+    public static double avgSpeed(double distance, long duration) {
+        if (duration == 0) {
+            return 0;
+        }
+        return distance / (duration / 1000.0);
+    }
+
     private static double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
     }

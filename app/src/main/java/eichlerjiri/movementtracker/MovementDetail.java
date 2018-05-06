@@ -16,16 +16,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 import eichlerjiri.movementtracker.db.HistoryItem;
 import eichlerjiri.movementtracker.db.LocationDb;
 import eichlerjiri.movementtracker.utils.Failure;
+import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class MovementDetail extends Activity {
@@ -123,21 +119,21 @@ public class MovementDetail extends Activity {
         long duration = item.getTsTo() - item.getTsFrom();
         double distance = computeDistance(locations);
 
-        String text = "from: " + formatDate(item.getTsFrom()) + "\n" +
-                "to: " + formatDate(item.getTsTo()) + "\n" +
+        String text = "from: " + FormatUtils.formatDate(item.getTsFrom()) + "\n" +
+                "to: " + FormatUtils.formatDate(item.getTsTo()) + "\n" +
                 "locations: " + locations.size() + "\n" +
                 "type: " + item.getMovementType() + "\n" +
-                "duration: " + formatDuration(duration) + "\n" +
-                "distance: " + formatDistance(distance) + "\n";
+                "duration: " + FormatUtils.formatDuration(duration) + "\n" +
+                "distance: " + FormatUtils.formatDistance(distance);
 
-        if (duration > 0) {
-            double avgSpeed = distance / (duration / 1000.0);
-            text += "avg. speed: " + formatSpeed(avgSpeed) + "\n";
+        double avgSpeed = GeoUtils.avgSpeed(distance, duration);
+        if (avgSpeed != 0.0) {
+            text += "\navg. speed: " + FormatUtils.formatSpeed(avgSpeed);
         }
 
         tv.setText(text);
 
-        if (locations.isEmpty()) {
+        if (distance == 0) {
             return;
         }
 
@@ -214,36 +210,5 @@ public class MovementDetail extends Activity {
 
         int padding = (int) (mapView.getWidth() * 0.1f);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(southwest, northeast), padding));
-    }
-
-    private String formatDate(long millis) {
-        SimpleDateFormat formatter = new SimpleDateFormat("d.M.yyyy HH:mm", Locale.US);
-        return formatter.format(new Date(millis));
-    }
-
-    private String formatDuration(long millis) {
-        long secondsFull = millis / 1000;
-        long seconds = secondsFull % 60;
-        long minutesFull = secondsFull / 60;
-        long minutes = minutesFull % 60;
-        long hours = minutesFull / 60;
-
-        DecimalFormat df = new DecimalFormat("00", new DecimalFormatSymbols(Locale.US));
-        return df.format(hours) + ":" + df.format(minutes) + ":" + df.format(seconds);
-    }
-
-    private String formatDistance(double distance) {
-        if (distance >= 1000) {
-            DecimalFormat df = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
-            return df.format(distance / 1000) + "km";
-        } else {
-            DecimalFormat df = new DecimalFormat("0", new DecimalFormatSymbols(Locale.US));
-            return df.format(distance) + "m";
-        }
-    }
-
-    private String formatSpeed(double speed) {
-        DecimalFormat df = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
-        return df.format(speed * 3.6) + "km/h";
     }
 }

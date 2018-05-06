@@ -6,6 +6,7 @@ import android.location.Location;
 import java.util.ArrayList;
 
 import eichlerjiri.movementtracker.utils.Failure;
+import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class Model {
 
@@ -22,10 +23,16 @@ public class Model {
     private Database database;
 
     private Location lastLocation;
-    private long activeRecording;
-    private String activeRecordingType = "";
-    private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
     private boolean receivingLocations;
+    private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
+
+    private String activeRecordingType = "";
+
+    private long activeRecording;
+    private long activeTsFrom;
+    private long activeTsTo;
+    private long activeLocations;
+    private double activeDistance;
 
     public void registerTrackingService(TrackingService service) {
         trackingService = service;
@@ -82,9 +89,34 @@ public class Model {
         return receivingLocations;
     }
 
+    public long getActiveTsFrom() {
+        return activeTsFrom;
+    }
+
+    public long getActiveTsTo() {
+        return activeTsTo;
+    }
+
+    public long getActiveLocations() {
+        return activeLocations;
+    }
+
+    public double getActiveDistance() {
+        return activeDistance;
+    }
+
     public void locationArrived(Location location) throws Failure {
+        long now = System.currentTimeMillis();
+
+        activeTsTo = now;
+        if (activeLocations != 0) {
+            activeDistance += GeoUtils.distance(lastLocation.getLatitude(), lastLocation.getLongitude(),
+                    location.getLatitude(), location.getLongitude());
+        }
+        activeLocations++;
+
         // nepouzivam location cas, zajima me soucasny cas zarizeni
-        getDatabase().saveLocation(System.currentTimeMillis(), location.getLatitude(), location.getLongitude());
+        getDatabase().saveLocation(now, location.getLatitude(), location.getLongitude());
         lastLocation = location;
 
         for (MovementTracker movementTracker : movementTrackers) {
@@ -93,28 +125,41 @@ public class Model {
     }
 
     public void startRecording(String movementType) throws Failure {
-        activeRecording = getDatabase().startRecording(System.currentTimeMillis(), movementType);
+        long now = System.currentTimeMillis();
+
+        activeRecording = getDatabase().startRecording(now, movementType);
         activeRecordingType = movementType;
+
+        activeTsFrom = now;
+        activeTsTo = now;
+        activeLocations = 0;
+        activeDistance = 0.0;
 
         refreshReceiving();
 
         if (trackingService != null) {
             trackingService.startRecording();
         }
+        for (MovementTracker movementTracker : movementTrackers) {
+            movementTracker.recordingStarted();
+        }
     }
 
     public void stopRecording() throws Failure {
-        getDatabase().stopRecording(System.currentTimeMillis(), activeRecording);
-        activeRecording = 0;
+        if (activeDistance != 0) {
+            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording);
+        } else {
+            getDatabase().deleteRecording(activeRecording);
+        }
         activeRecordingType = "";
 
         refreshReceiving();
 
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.recordingStopped();
-        }
         if (trackingService != null) {
             trackingService.stopRecording();
+        }
+        for (MovementTracker movementTracker : movementTrackers) {
+            movementTracker.recordingStopped();
         }
     }
 

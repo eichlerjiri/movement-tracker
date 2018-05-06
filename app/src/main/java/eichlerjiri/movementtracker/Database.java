@@ -64,17 +64,21 @@ public class Database {
         return insert("recording", values);
     }
 
-    public void stopRecording(long timestamp, long id) throws Failure {
+    public void finishRecording(long timestamp, long id) throws Failure {
         ContentValues values = new ContentValues();
         values.put("ts_end", timestamp);
         update("recording", values, "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteRecording(long id) throws Failure {
+        delete("recording", "id=?", new String[]{String.valueOf(id)});
     }
 
     public ArrayList<HistoryItem> getHistory() throws Failure {
         ArrayList<HistoryItem> ret = new ArrayList<>();
 
         Cursor c = query("recording", new String[]{"id", "movement_type", "ts_start", "ts_end"},
-                "ts_end<>0", null, null, null, "ts_start,id");
+                "ts_end<>0", null, null, null, "ts_start DESC,id");
         while (c.moveToNext()) {
             ret.add(new HistoryItem(c.getLong(0), c.getString(1), c.getLong(2), c.getLong(3)));
         }
@@ -99,7 +103,7 @@ public class Database {
     public ArrayList<LocationDb> getLocations(long tsStart, long tsEnd) throws Failure {
         ArrayList<LocationDb> ret = new ArrayList<>();
 
-        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=? AND ts<?",
+        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=? AND ts<=?",
                 new String[]{String.valueOf(tsStart), String.valueOf(tsEnd)}, null, null, "ts,id");
         while (c.moveToNext()) {
             ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
@@ -120,6 +124,14 @@ public class Database {
     private int update(String table, ContentValues values, String where, String[] whereValues) throws Failure {
         try {
             return sqlite.update(table, values, where, whereValues);
+        } catch (SQLException e) {
+            throw new Failure(e);
+        }
+    }
+
+    private int delete(String table, String where, String[] whereValues) throws Failure {
+        try {
+            return sqlite.delete(table, where, whereValues);
         } catch (SQLException e) {
             throw new Failure(e);
         }
