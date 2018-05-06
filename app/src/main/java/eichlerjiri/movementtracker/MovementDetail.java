@@ -104,6 +104,10 @@ public class MovementDetail extends Activity {
         setContentView(detailView);
 
         ActionBar actionBar = getActionBar();
+        if (actionBar == null) {
+            throw new Failure("Action bar not available");
+        }
+
         actionBar.setDisplayHomeAsUpEnabled(true);
 
         TextView tv = detailView.findViewById(R.id.detailText);

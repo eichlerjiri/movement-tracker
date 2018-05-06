@@ -26,7 +26,7 @@ public class Database {
 
             @Override
             public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-                upgradeDatabase(db, oldVersion, newVersion);
+                upgradeDatabase(oldVersion, newVersion);
             }
         }.getWritableDatabase();
     }
@@ -44,7 +44,7 @@ public class Database {
         );
     }
 
-    private void upgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
+    private void upgradeDatabase(int oldVersion, int newVersion) {
         Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
     }
 
@@ -99,10 +99,10 @@ public class Database {
     public ArrayList<LocationDb> getLocations(long tsStart, long tsEnd) throws Failure {
         ArrayList<LocationDb> ret = new ArrayList<>();
 
-        Cursor c = query("location", new String[]{"ts", "lat", "lon"}, "ts>=? AND ts<?",
+        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=? AND ts<?",
                 new String[]{String.valueOf(tsStart), String.valueOf(tsEnd)}, null, null, "ts,id");
         while (c.moveToNext()) {
-            ret.add(new LocationDb(c.getLong(0), c.getDouble(1), c.getDouble(2)));
+            ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
         }
         c.close();
 

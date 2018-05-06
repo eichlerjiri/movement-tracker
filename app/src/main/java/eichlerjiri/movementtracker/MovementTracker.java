@@ -57,6 +57,47 @@ public class MovementTracker extends Activity {
         m = Model.getInstance();
         m.registerMovementTracker(this);
 
+        try {
+            doCreate();
+        } catch (Failure ignored) {
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        m.unregisterMovementTracker(this);
+
+        if (bound) {
+            unbindService(serviceConnection);
+            bound = false;
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        m.startedMovementTracker(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        m.stoppedMovementTracker(this);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+        try {
+            handlePermissionsResult(permissions, grantResults);
+        } catch (Failure ignored) {
+        }
+    }
+
+    private void doCreate() throws Failure {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
@@ -78,6 +119,10 @@ public class MovementTracker extends Activity {
         setContentView(recordingView);
 
         ActionBar actionBar = getActionBar();
+        if (actionBar == null) {
+            throw new Failure("Action bar not available");
+        }
+
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
         ActionBar.TabListener tabListener = new ActionBar.TabListener() {
@@ -113,40 +158,6 @@ public class MovementTracker extends Activity {
         actionBar.addTab(historyTab);
 
         updateText();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        m.unregisterMovementTracker(this);
-
-        if (bound) {
-            unbindService(serviceConnection);
-            bound = false;
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        m.startedMovementTracker(this);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        m.stoppedMovementTracker(this);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
-        try {
-            handlePermissionsResult(permissions, grantResults);
-        } catch (Failure ignored) {
-        }
     }
 
     private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {

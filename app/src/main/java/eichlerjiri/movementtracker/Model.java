@@ -78,8 +78,8 @@ public class Model {
         return activeRecordingType;
     }
 
-    public ArrayList<MovementTracker> getStartedMovementTrackers() {
-        return startedMovementTrackers;
+    public boolean isReceivingLocations() {
+        return receivingLocations;
     }
 
     public void locationArrived(Location location) throws Failure {

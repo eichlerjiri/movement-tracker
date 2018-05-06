@@ -25,7 +25,7 @@ public class MovementTypeButton extends Button {
             @Override
             public void onClick(View v) {
                 try {
-                    handleClick(c, v, movementType);
+                    handleClick(movementType);
                 } catch (Failure ignored) {
                 }
             }
@@ -36,7 +36,7 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void handleClick(Context c, View v, String movementType) throws Failure {
+    private void handleClick(String movementType) throws Failure {
         String activeRecordingType = m.getActiveRecordingType();
 
         if (!activeRecordingType.isEmpty()) {

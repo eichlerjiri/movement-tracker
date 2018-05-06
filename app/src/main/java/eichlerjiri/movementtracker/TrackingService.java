@@ -24,7 +24,6 @@ public class TrackingService extends Service {
     private LocationManager locationManager;
     private LocationListener locationListener;
 
-    private boolean notificationsStarted;
     private int notificationCounter;
 
     @Override
@@ -75,6 +74,13 @@ public class TrackingService extends Service {
             public void onProviderDisabled(String provider) {
             }
         };
+
+        if (m.isReceivingLocations()) {
+            startReceiving();
+        }
+        if (!m.getActiveRecordingType().isEmpty()) {
+            startRecording();
+        }
     }
 
     public void startReceiving() {
