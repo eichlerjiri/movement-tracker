@@ -25,14 +25,17 @@ import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import eichlerjiri.movementtracker.db.HistoryItem;
+import eichlerjiri.movementtracker.db.LocationDb;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
@@ -50,8 +53,9 @@ public class MovementTracker extends Activity {
 
     private MapView mapView;
     private GoogleMap mapInterface;
-    private PolylineOptions polyline;
+    private Polyline polyline;
     private LocationSource.OnLocationChangedListener googleLocationChangedListener;
+    private boolean keepMapCentered = true;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -284,19 +288,33 @@ public class MovementTracker extends Activity {
         });
         mapInterface.setMyLocationEnabled(true);
 
-        if (!m.getActiveRecordingType().isEmpty()) {
-            // TODO load locations from database
+        mapInterface.setOnCameraMoveStartedListener(new GoogleMap.OnCameraMoveStartedListener() {
+            @Override
+            public void onCameraMoveStarted(int var1) {
+                if (var1 == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                    keepMapCentered = false;
+                }
+            }
+        });
 
-            if (m.getActiveMinLat() != Double.MAX_VALUE) {
-                GeoUtils.moveToRect(mapView, mapInterface, m.getActiveMinLat(), m.getActiveMinLon(),
-                        m.getActiveMaxLat(), m.getActiveMaxLon());
+        mapInterface.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                keepMapCentered = true;
+                centerMap();
+                return true;
             }
-        } else {
-            Location l = m.getLastLocation();
-            if (l != null) {
-                GeoUtils.moveToPoint(mapInterface, l.getLatitude(), l.getLongitude());
+        });
+
+        if (!m.getActiveRecordingType().isEmpty()) {
+            ArrayList<LatLng> points = new ArrayList<>();
+            for (LocationDb location : m.getDatabase().getLocationsFrom(m.getActiveTsFrom())) {
+                points.add(new LatLng(location.getLat(), location.getLon()));
             }
+            polyline = mapInterface.addPolyline(new PolylineOptions().addAll(points));
         }
+
+        centerMap();
     }
 
     public void lastLocationUpdated() {
@@ -347,11 +365,26 @@ public class MovementTracker extends Activity {
         }
         if (mapInterface != null) {
             if (!m.getActiveRecordingType().isEmpty()) {
-                polyline.add(new LatLng(l.getLatitude(), l.getLongitude()));
+                List<LatLng> points = polyline.getPoints();
+                points.add(new LatLng(l.getLatitude(), l.getLongitude()));
+                polyline.setPoints(points);
+            }
 
+            if (keepMapCentered) {
+                centerMap();
+            }
+        }
+    }
+
+    private void centerMap() {
+        if (!m.getActiveRecordingType().isEmpty()) {
+            if (m.getActiveMinLat() != Double.MAX_VALUE) {
                 GeoUtils.moveToRect(mapView, mapInterface, m.getActiveMinLat(), m.getActiveMinLon(),
                         m.getActiveMaxLat(), m.getActiveMaxLon());
-            } else {
+            }
+        } else {
+            Location l = m.getLastLocation();
+            if (l != null) {
                 GeoUtils.moveToPoint(mapInterface, l.getLatitude(), l.getLongitude());
             }
         }
@@ -361,8 +394,7 @@ public class MovementTracker extends Activity {
         updateText();
 
         if (mapInterface != null) {
-            polyline = new PolylineOptions();
-            mapInterface.addPolyline(polyline);
+            polyline = mapInterface.addPolyline(new PolylineOptions());
         }
     }
 
@@ -374,8 +406,7 @@ public class MovementTracker extends Activity {
         updateText();
 
         if (mapInterface != null) {
-            polyline = null;
-            mapInterface.clear();
+            polyline.remove();
         }
 
         if (historyView != null) {

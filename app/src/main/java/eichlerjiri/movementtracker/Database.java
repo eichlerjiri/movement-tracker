@@ -100,11 +100,24 @@ public class Database {
         return ret;
     }
 
-    public ArrayList<LocationDb> getLocations(long tsStart, long tsEnd) throws Failure {
+    public ArrayList<LocationDb> getLocationsBetween(long tsStart, long tsEnd) throws Failure {
         ArrayList<LocationDb> ret = new ArrayList<>();
 
         Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=? AND ts<=?",
                 new String[]{String.valueOf(tsStart), String.valueOf(tsEnd)}, null, null, "ts,id");
+        while (c.moveToNext()) {
+            ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
+        }
+        c.close();
+
+        return ret;
+    }
+
+    public ArrayList<LocationDb> getLocationsFrom(long tsStart) throws Failure {
+        ArrayList<LocationDb> ret = new ArrayList<>();
+
+        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=?",
+                new String[]{String.valueOf(tsStart)}, null, null, "ts,id");
         while (c.moveToNext()) {
             ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
         }

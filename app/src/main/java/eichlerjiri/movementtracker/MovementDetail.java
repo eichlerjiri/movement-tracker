@@ -111,7 +111,7 @@ public class MovementDetail extends Activity {
             return;
         }
 
-        final ArrayList<LocationDb> locations = m.getDatabase().getLocations(item.getTsFrom(), item.getTsTo());
+        final ArrayList<LocationDb> locations = m.getDatabase().getLocationsBetween(item.getTsFrom(), item.getTsTo());
 
         long from = item.getTsFrom();
         long to = item.getTsTo();
