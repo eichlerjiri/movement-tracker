@@ -1,5 +1,13 @@
 package eichlerjiri.movementtracker.utils;
 
+import android.view.ViewTreeObserver;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+
 public class GeoUtils {
 
     public static double distance(double lat1, double lon1, double lat2, double lon2) {
@@ -20,6 +28,32 @@ public class GeoUtils {
             return 0;
         }
         return distance / (duration / 1000.0);
+    }
+
+    public static void waitForViewToBeReady(final MapView mapView, final Runnable callback) {
+        if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
+            callback.run();
+        } else {
+            mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    callback.run();
+                }
+            });
+        }
+    }
+
+    public static void moveToRect(MapView mapView, GoogleMap mapInterface, double minLat, double minLon,
+                                  double maxLat, double maxLon) {
+        int padding = (int) (mapView.getWidth() * 0.1f);
+
+        mapInterface.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
+                new LatLng(minLat, minLon), new LatLng(maxLat, maxLon)), padding));
+    }
+
+    public static void moveToPoint(GoogleMap mapInterface, double lat, double lon) {
+        mapInterface.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 15));
     }
 
     private static double deg2rad(double deg) {

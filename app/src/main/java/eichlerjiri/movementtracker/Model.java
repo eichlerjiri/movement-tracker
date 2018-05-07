@@ -33,6 +33,12 @@ public class Model {
     private long activeTsTo;
     private long activeLocations;
     private double activeDistance;
+    private double activeMinLat;
+    private double activeMinLon;
+    private double activeMaxLat;
+    private double activeMaxLon;
+
+    private int notificationCounter;
 
     public void registerTrackingService(TrackingService service) {
         trackingService = service;
@@ -105,18 +111,42 @@ public class Model {
         return activeDistance;
     }
 
+    public double getActiveMinLat() {
+        return activeMinLat;
+    }
+
+    public double getActiveMinLon() {
+        return activeMinLon;
+    }
+
+    public double getActiveMaxLat() {
+        return activeMaxLat;
+    }
+
+    public double getActiveMaxLon() {
+        return activeMaxLon;
+    }
+
     public void locationArrived(Location location) throws Failure {
-        long now = System.currentTimeMillis();
+        if (!activeRecordingType.isEmpty()) {
+            long now = System.currentTimeMillis();
 
-        activeTsTo = now;
-        if (activeLocations != 0) {
-            activeDistance += GeoUtils.distance(lastLocation.getLatitude(), lastLocation.getLongitude(),
-                    location.getLatitude(), location.getLongitude());
+            // nepouzivam location cas, zajima me soucasny cas zarizeni
+            getDatabase().saveLocation(now, location.getLatitude(), location.getLongitude());
+
+            activeTsTo = now;
+            if (activeLocations != 0) {
+                activeDistance += GeoUtils.distance(lastLocation.getLatitude(), lastLocation.getLongitude(),
+                        location.getLatitude(), location.getLongitude());
+            }
+            activeLocations++;
+
+            activeMinLat = Math.min(activeMinLat, location.getLatitude());
+            activeMinLon = Math.min(activeMinLon, location.getLongitude());
+            activeMaxLat = Math.max(activeMaxLat, location.getLatitude());
+            activeMaxLon = Math.max(activeMaxLon, location.getLongitude());
         }
-        activeLocations++;
 
-        // nepouzivam location cas, zajima me soucasny cas zarizeni
-        getDatabase().saveLocation(now, location.getLatitude(), location.getLongitude());
         lastLocation = location;
 
         for (MovementTracker movementTracker : movementTrackers) {
@@ -134,6 +164,10 @@ public class Model {
         activeTsTo = now;
         activeLocations = 0;
         activeDistance = 0.0;
+        activeMinLat = Double.MAX_VALUE;
+        activeMinLon = Double.MAX_VALUE;
+        activeMaxLat = Double.MIN_VALUE;
+        activeMaxLon = Double.MIN_VALUE;
 
         refreshReceiving();
 
@@ -187,5 +221,9 @@ public class Model {
                 trackingService.stopReceiving();
             }
         }
+    }
+
+    public int getNotificationsId() {
+        return ++notificationCounter;
     }
 }

@@ -24,8 +24,6 @@ public class TrackingService extends Service {
     private LocationManager locationManager;
     private LocationListener locationListener;
 
-    private int notificationCounter;
-
     @Override
     public void onCreate() {
         m = Model.getInstance();
@@ -96,6 +94,11 @@ public class TrackingService extends Service {
             throw new Failure("Missing permissions for location service.");
         }
 
+        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (location != null) {
+            m.locationArrived(location);
+        }
+
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
     }
 
@@ -113,7 +116,7 @@ public class TrackingService extends Service {
                 .setContentIntent(pendingIntent)
                 .getNotification();
 
-        startForeground(++notificationCounter, notification);
+        startForeground(m.getNotificationsId(), notification);
     }
 
     public void stopRecording() {

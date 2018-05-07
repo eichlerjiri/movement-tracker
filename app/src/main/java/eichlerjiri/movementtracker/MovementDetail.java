@@ -4,16 +4,13 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
@@ -56,7 +53,6 @@ public class MovementDetail extends Activity {
         mapView.onResume();
     }
 
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -84,6 +80,7 @@ public class MovementDetail extends Activity {
 
     @Override
     public void onLowMemory() {
+        super.onLowMemory();
         mapView.onLowMemory();
     }
 
@@ -116,11 +113,15 @@ public class MovementDetail extends Activity {
 
         final ArrayList<LocationDb> locations = m.getDatabase().getLocations(item.getTsFrom(), item.getTsTo());
 
-        long duration = item.getTsTo() - item.getTsFrom();
+        long from = item.getTsFrom();
+        long to = item.getTsTo();
+        long duration = to - from;
         double distance = computeDistance(locations);
 
-        String text = "from: " + FormatUtils.formatDate(item.getTsFrom()) + "\n" +
-                "to: " + FormatUtils.formatDate(item.getTsTo()) + "\n" +
+        boolean sameDay = FormatUtils.isSameDay(from, to);
+
+        String text = "from " + FormatUtils.formatDateTime(from) +
+                " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
                 "locations: " + locations.size() + "\n" +
                 "type: " + item.getMovementType() + "\n" +
                 "duration: " + FormatUtils.formatDuration(duration) + "\n" +
@@ -133,15 +134,11 @@ public class MovementDetail extends Activity {
 
         tv.setText(text);
 
-        if (distance == 0) {
-            return;
-        }
-
         detailView.addView(mapView);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
-                waitForViewToBeReady(new Runnable() {
+                GeoUtils.waitForViewToBeReady(mapView, new Runnable() {
                     @Override
                     public void run() {
                         drawLine(googleMap, locations);
@@ -174,20 +171,6 @@ public class MovementDetail extends Activity {
         return ret;
     }
 
-    private void waitForViewToBeReady(final Runnable callback) {
-        if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
-            callback.run();
-        } else {
-            mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                    callback.run();
-                }
-            });
-        }
-    }
-
     private void drawLine(GoogleMap googleMap, ArrayList<LocationDb> locations) {
         double minLat = Double.MAX_VALUE;
         double minLon = Double.MAX_VALUE;
@@ -205,10 +188,6 @@ public class MovementDetail extends Activity {
         }
         googleMap.addPolyline(polyline);
 
-        LatLng southwest = new LatLng(minLat, minLon);
-        LatLng northeast = new LatLng(maxLat, maxLon);
-
-        int padding = (int) (mapView.getWidth() * 0.1f);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(southwest, northeast), padding));
+        GeoUtils.moveToRect(mapView, googleMap, minLat, minLon, maxLat, maxLon);
     }
 }

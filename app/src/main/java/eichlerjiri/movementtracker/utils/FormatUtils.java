@@ -3,14 +3,47 @@ package eichlerjiri.movementtracker.utils;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
 public class FormatUtils {
 
-    public static String formatDate(long millis) {
-        SimpleDateFormat formatter = new SimpleDateFormat("d.M.yyyy HH:mm", Locale.US);
-        return formatter.format(new Date(millis));
+    public static String formatDateTime(long millis) {
+        return format(millis, "d.M.yyyy HH:mm");
+    }
+
+    public static String formatDateTimeSecs(long millis) {
+        return format(millis, "d.M.yyyy HH:mm:ss");
+    }
+
+    public static String formatTime(long millis) {
+        return format(millis, "HH:mm");
+    }
+
+    public static String formatTimeSecs(long millis) {
+        return format(millis, "HH:mm:ss");
+    }
+
+    private static String format(long millis, String template) {
+        return new SimpleDateFormat(template, Locale.US).format(new Date(millis));
+    }
+
+    public static boolean isSameDay(long millis1, long millis2) {
+        Calendar cal1 = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+        cal1.setTimeInMillis(millis1);
+        cal2.setTimeInMillis(millis2);
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+    }
+
+    public static String formatCoord(double coord) {
+        return new DecimalFormat("0.000000", symbols()).format(coord);
+    }
+
+    public static String formatAccuracy(float accuracy) {
+        return new DecimalFormat("0.0", symbols()).format(accuracy) + "m";
     }
 
     public static String formatDuration(long millis) {
@@ -20,22 +53,23 @@ public class FormatUtils {
         long minutes = minutesFull % 60;
         long hours = minutesFull / 60;
 
-        DecimalFormat df = new DecimalFormat("00", new DecimalFormatSymbols(Locale.US));
+        DecimalFormat df = new DecimalFormat("00", symbols());
         return df.format(hours) + ":" + df.format(minutes) + ":" + df.format(seconds);
     }
 
     public static String formatDistance(double distance) {
         if (distance >= 1000) {
-            DecimalFormat df = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
-            return df.format(distance / 1000) + "km";
+            return new DecimalFormat("0.00", symbols()).format(distance / 1000) + "km";
         } else {
-            DecimalFormat df = new DecimalFormat("0", new DecimalFormatSymbols(Locale.US));
-            return df.format(distance) + "m";
+            return new DecimalFormat("0", symbols()).format(distance) + "m";
         }
     }
 
     public static String formatSpeed(double speed) {
-        DecimalFormat df = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
-        return df.format(speed * 3.6) + "km/h";
+        return new DecimalFormat("0.00", symbols()).format(speed * 3.6) + "km/h";
+    }
+
+    private static DecimalFormatSymbols symbols() {
+        return new DecimalFormatSymbols(Locale.US);
     }
 }

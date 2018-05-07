@@ -20,6 +20,13 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.LocationSource;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,7 +48,10 @@ public class MovementTracker extends Activity {
     private LinearLayout historyView;
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
-    private boolean bound;
+    private MapView mapView;
+    private GoogleMap mapInterface;
+    private PolylineOptions polyline;
+    private LocationSource.OnLocationChangedListener googleLocationChangedListener;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -58,6 +68,8 @@ public class MovementTracker extends Activity {
         super.onCreate(savedInstanceState);
         m = Model.getInstance();
         m.registerMovementTracker(this);
+        mapView = new MapView(this);
+        mapView.onCreate(savedInstanceState);
 
         try {
             doCreate();
@@ -69,16 +81,15 @@ public class MovementTracker extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         m.unregisterMovementTracker(this);
+        mapView.onDestroy();
 
-        if (bound) {
-            unbindService(serviceConnection);
-            bound = false;
-        }
+        unbindService(serviceConnection);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        mapView.onStart();
 
         m.startedMovementTracker(this);
     }
@@ -86,8 +97,33 @@ public class MovementTracker extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        mapView.onStop();
 
         m.stoppedMovementTracker(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
     }
 
     @Override
@@ -106,7 +142,9 @@ public class MovementTracker extends Activity {
         } else {
             Intent intent = new Intent(this, TrackingService.class);
             startService(intent);
-            bound = bindService(intent, serviceConnection, 0);
+            if (!bindService(intent, serviceConnection, 0)) {
+                throw new Failure("Cannot bind tracking service");
+            }
         }
 
         recordingView = (LinearLayout) getLayoutInflater().inflate(R.layout.recording, null);
@@ -161,6 +199,24 @@ public class MovementTracker extends Activity {
         actionBar.addTab(historyTab);
 
         updateText();
+
+        recordingView.addView(mapView);
+        mapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(GoogleMap googleMap) {
+                mapInterface = googleMap;
+
+                GeoUtils.waitForViewToBeReady(mapView, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            initMap();
+                        } catch (Failure ignored) {
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
@@ -205,8 +261,47 @@ public class MovementTracker extends Activity {
         });
     }
 
+    private void initMap() throws Failure {
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            throw new Failure("Missing permissions for location service.");
+        }
+
+        mapInterface.setLocationSource(new LocationSource() {
+            @Override
+            public void activate(LocationSource.OnLocationChangedListener onLocationChangedListener) {
+                googleLocationChangedListener = onLocationChangedListener;
+                Location l = m.getLastLocation();
+                if (l != null) {
+                    googleLocationChangedListener.onLocationChanged(l);
+                }
+            }
+
+            @Override
+            public void deactivate() {
+                googleLocationChangedListener = null;
+            }
+        });
+        mapInterface.setMyLocationEnabled(true);
+
+        if (!m.getActiveRecordingType().isEmpty()) {
+            // TODO load locations from database
+
+            if (m.getActiveMinLat() != Double.MAX_VALUE) {
+                GeoUtils.moveToRect(mapView, mapInterface, m.getActiveMinLat(), m.getActiveMinLon(),
+                        m.getActiveMaxLat(), m.getActiveMaxLon());
+            }
+        } else {
+            Location l = m.getLastLocation();
+            if (l != null) {
+                GeoUtils.moveToPoint(mapInterface, l.getLatitude(), l.getLongitude());
+            }
+        }
+    }
+
     public void lastLocationUpdated() {
         updateText();
+        updateMap();
     }
 
     private void updateText() {
@@ -214,16 +309,22 @@ public class MovementTracker extends Activity {
 
         Location l = m.getLastLocation();
         if (l != null) {
-            text = "GPS: " + l.getLatitude() + " " + l.getLongitude();
+            text = "GPS: " + FormatUtils.formatCoord(l.getLatitude()) +
+                    " " + FormatUtils.formatCoord(l.getLongitude()) +
+                    " " + FormatUtils.formatAccuracy(l.getAccuracy());
         } else {
             text = "GPS: not yet obtained";
         }
 
         if (!m.getActiveRecordingType().isEmpty()) {
-            long duration = m.getActiveTsTo() - m.getActiveTsFrom();
+            long from = m.getActiveTsFrom();
+            long to = m.getActiveTsTo();
+            long duration = to - from;
 
-            text += "\nfrom: " + FormatUtils.formatDate(m.getActiveTsFrom()) + "\n" +
-                    "to: " + FormatUtils.formatDate(m.getActiveTsTo()) + "\n" +
+            boolean sameDay = FormatUtils.isSameDay(from, to);
+
+            text += "\nfrom " + FormatUtils.formatDateTimeSecs(from) +
+                    " to " + (sameDay ? FormatUtils.formatTimeSecs(to) : FormatUtils.formatDateTimeSecs(to)) + "\n" +
                     "locations: " + m.getActiveLocations() + "\n" +
                     "duration: " + FormatUtils.formatDuration(duration) + "\n" +
                     "distance: " + FormatUtils.formatDistance(m.getActiveDistance());
@@ -238,8 +339,31 @@ public class MovementTracker extends Activity {
         tv.setText(text);
     }
 
+    private void updateMap() {
+        Location l = m.getLastLocation();
+
+        if (googleLocationChangedListener != null) {
+            googleLocationChangedListener.onLocationChanged(l);
+        }
+        if (mapInterface != null) {
+            if (!m.getActiveRecordingType().isEmpty()) {
+                polyline.add(new LatLng(l.getLatitude(), l.getLongitude()));
+
+                GeoUtils.moveToRect(mapView, mapInterface, m.getActiveMinLat(), m.getActiveMinLon(),
+                        m.getActiveMaxLat(), m.getActiveMaxLon());
+            } else {
+                GeoUtils.moveToPoint(mapInterface, l.getLatitude(), l.getLongitude());
+            }
+        }
+    }
+
     public void recordingStarted() {
         updateText();
+
+        if (mapInterface != null) {
+            polyline = new PolylineOptions();
+            mapInterface.addPolyline(polyline);
+        }
     }
 
     public void recordingStopped() throws Failure {
@@ -248,6 +372,11 @@ public class MovementTracker extends Activity {
         }
 
         updateText();
+
+        if (mapInterface != null) {
+            polyline = null;
+            mapInterface.clear();
+        }
 
         if (historyView != null) {
             loadHistoryList();

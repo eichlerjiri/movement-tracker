@@ -16,7 +16,7 @@ public class MovementTypeButton extends Button {
     private final Model m;
     private final Drawable originalBackground;
 
-    public MovementTypeButton(final Context c, final String movementType) {
+    public MovementTypeButton(Context c, final String movementType) {
         super(c);
         m = Model.getInstance();
 
@@ -49,8 +49,9 @@ public class MovementTypeButton extends Button {
                     .setTitle("Stop recording?");
 
             AlertDialog alertDialog = builder.create();
-            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
+            alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Yes",
                     new DialogInterface.OnClickListener() {
+                        @Override
                         public void onClick(DialogInterface dialog, int which) {
                             try {
                                 m.stopRecording();
@@ -61,7 +62,7 @@ public class MovementTypeButton extends Button {
                             }
                         }
                     });
-            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
+            alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
             alertDialog.show();
         }
     }
