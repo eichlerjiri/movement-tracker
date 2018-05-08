@@ -5,8 +5,15 @@ import android.view.ViewTreeObserver;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.ArrayList;
+
+import eichlerjiri.movementtracker.db.LocationRow;
 
 public class GeoUtils {
 
@@ -54,6 +61,27 @@ public class GeoUtils {
 
     public static void moveToPoint(GoogleMap mapInterface, double lat, double lon) {
         mapInterface.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 15));
+    }
+
+    public static PolylineOptions createPolyline(ArrayList<LocationRow> locs) {
+        PolylineOptions polyline = createPolyline();
+        for (LocationRow location : locs) {
+            polyline.add(new LatLng(location.lat, location.lon));
+        }
+        return polyline;
+    }
+
+    public static PolylineOptions createPolyline() {
+        return new PolylineOptions().width(5.0f);
+    }
+
+    public static MarkerOptions createMarker(LocationRow loc, float marker) {
+        return createMarker(new LatLng(loc.lat, loc.lon), marker);
+    }
+
+    public static MarkerOptions createMarker(LatLng latLng, float marker) {
+        return new MarkerOptions().position(latLng).icon(
+                BitmapDescriptorFactory.defaultMarker(marker));
     }
 
     private static double deg2rad(double deg) {

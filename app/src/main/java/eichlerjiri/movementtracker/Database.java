@@ -9,19 +9,22 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-import eichlerjiri.movementtracker.db.HistoryItem;
-import eichlerjiri.movementtracker.db.LocationDb;
+import eichlerjiri.movementtracker.db.HistoryRow;
+import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.Failure;
 
 public class Database {
 
-    private final SQLiteDatabase sqlite;
+    private final SQLiteDatabase db;
 
     public Database() throws Failure {
-        sqlite = new SQLiteOpenHelper(Model.getInstance().getAnyContext(), "movement-tracker", null, 1) {
+        db = new SQLiteOpenHelper(Model.getInstance().getAnyContext(), "movement-tracker", null, 1) {
             @Override
-            public void onCreate(SQLiteDatabase db) {
-                createDatabase(db);
+            public void onCreate(SQLiteDatabase sqlite) {
+                try {
+                    createDatabase(sqlite);
+                } catch (Failure ignored) {
+                }
             }
 
             @Override
@@ -31,102 +34,106 @@ public class Database {
         }.getWritableDatabase();
     }
 
-    private void createDatabase(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE location(id INTEGER PRIMARY KEY," +
+    private void createDatabase(SQLiteDatabase sqlite) throws Failure {
+        execSQL(sqlite, "CREATE TABLE recording(id INTEGER PRIMARY KEY," +
+                "ts INTEGER," +
+                "ts_end INTEGER," +
+                "movement_type VARCHAR(20)," +
+                "distance DOUBLE)"
+        );
+
+        execSQL(sqlite, "CREATE TABLE location(id INTEGER PRIMARY KEY," +
+                "id_recording INTEGER," +
                 "ts INTEGER," +
                 "lat DOUBLE," +
                 "lon DOUBLE)"
         );
-        db.execSQL("CREATE TABLE recording(id INTEGER PRIMARY KEY," +
-                "ts_start INTEGER," +
-                "ts_end INTEGER," +
-                "movement_type VARCHAR(20))"
-        );
+
+        execSQL(sqlite, "CREATE INDEX recording_ts ON recording(ts)");
+        execSQL(sqlite, "CREATE INDEX location_recording_ts ON location(id_recording,ts)");
     }
 
     private void upgradeDatabase(int oldVersion, int newVersion) {
         Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
     }
 
-    public void saveLocation(long timestamp, double lat, double lon) throws Failure {
+    public void saveLocation(long idRecording, long timestamp, double lat, double lon) throws Failure {
         ContentValues values = new ContentValues();
+        values.put("id_recording", idRecording);
         values.put("ts", timestamp);
         values.put("lat", lat);
         values.put("lon", lon);
-        insert("location", values);
+        insert(db, "location", values);
     }
 
     public long startRecording(long timestamp, String movementType) throws Failure {
         ContentValues values = new ContentValues();
-        values.put("ts_start", timestamp);
+        values.put("ts", timestamp);
         values.put("ts_end", 0L);
         values.put("movement_type", movementType);
-        return insert("recording", values);
+        values.put("distance", 0.0);
+        return insert(db, "recording", values);
     }
 
-    public void finishRecording(long timestamp, long id) throws Failure {
+    public void finishRecording(long timestamp, long id, double distance) throws Failure {
         ContentValues values = new ContentValues();
         values.put("ts_end", timestamp);
-        update("recording", values, "id=?", new String[]{String.valueOf(id)});
+        values.put("distance", distance);
+        update(db, "recording", values, "id=?", new String[]{String.valueOf(id)});
     }
 
     public void deleteRecording(long id) throws Failure {
-        delete("recording", "id=?", new String[]{String.valueOf(id)});
+        delete(db, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 
-    public ArrayList<HistoryItem> getHistory() throws Failure {
-        ArrayList<HistoryItem> ret = new ArrayList<>();
+    public ArrayList<HistoryRow> getHistory() throws Failure {
+        ArrayList<HistoryRow> ret = new ArrayList<>();
 
-        Cursor c = query("recording", new String[]{"id", "movement_type", "ts_start", "ts_end"},
-                "ts_end<>0", null, null, null, "ts_start DESC,id");
+        Cursor c = query(db, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
+                "ts_end<>0", null, null, null, "ts DESC,id");
         while (c.moveToNext()) {
-            ret.add(new HistoryItem(c.getLong(0), c.getString(1), c.getLong(2), c.getLong(3)));
+            ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
         }
         c.close();
 
         return ret;
     }
 
-    public HistoryItem getHistoryItem(long id) throws Failure {
-        HistoryItem ret = null;
+    public HistoryRow getHistoryItem(long id) throws Failure {
+        HistoryRow ret = null;
 
-        Cursor c = query("recording", new String[]{"id", "movement_type", "ts_start", "ts_end"},
+        Cursor c = query(db, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
                 "ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null, null, null);
         if (c.moveToNext()) {
-            ret = new HistoryItem(c.getLong(0), c.getString(1), c.getLong(2), c.getLong(3));
+            ret = new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4));
         }
         c.close();
 
         return ret;
     }
 
-    public ArrayList<LocationDb> getLocationsBetween(long tsStart, long tsEnd) throws Failure {
-        ArrayList<LocationDb> ret = new ArrayList<>();
+    public ArrayList<LocationRow> getLocations(long idRecording) throws Failure {
+        ArrayList<LocationRow> ret = new ArrayList<>();
 
-        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=? AND ts<=?",
-                new String[]{String.valueOf(tsStart), String.valueOf(tsEnd)}, null, null, "ts,id");
+        Cursor c = query(db, "location", new String[]{"lat", "lon"}, "id_recording=?",
+                new String[]{String.valueOf(idRecording)}, null, null, "ts,id");
         while (c.moveToNext()) {
-            ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
+            ret.add(new LocationRow(c.getDouble(0), c.getDouble(1)));
         }
         c.close();
 
         return ret;
     }
 
-    public ArrayList<LocationDb> getLocationsFrom(long tsStart) throws Failure {
-        ArrayList<LocationDb> ret = new ArrayList<>();
-
-        Cursor c = query("location", new String[]{"lat", "lon"}, "ts>=?",
-                new String[]{String.valueOf(tsStart)}, null, null, "ts,id");
-        while (c.moveToNext()) {
-            ret.add(new LocationDb(c.getDouble(0), c.getDouble(1)));
+    private void execSQL(SQLiteDatabase sqlite, String sql) throws Failure {
+        try {
+            sqlite.execSQL(sql);
+        } catch (SQLException e) {
+            throw new Failure(e);
         }
-        c.close();
-
-        return ret;
     }
 
-    private long insert(String table, ContentValues values) throws Failure {
+    private long insert(SQLiteDatabase sqlite, String table, ContentValues values) throws Failure {
         try {
             return sqlite.insertOrThrow(table, null, values);
         } catch (SQLException e) {
@@ -134,7 +141,8 @@ public class Database {
         }
     }
 
-    private int update(String table, ContentValues values, String where, String[] whereValues) throws Failure {
+    private int update(SQLiteDatabase sqlite, String table, ContentValues values, String where, String[] whereValues)
+            throws Failure {
         try {
             return sqlite.update(table, values, where, whereValues);
         } catch (SQLException e) {
@@ -142,7 +150,7 @@ public class Database {
         }
     }
 
-    private int delete(String table, String where, String[] whereValues) throws Failure {
+    private int delete(SQLiteDatabase sqlite, String table, String where, String[] whereValues) throws Failure {
         try {
             return sqlite.delete(table, where, whereValues);
         } catch (SQLException e) {
@@ -150,8 +158,8 @@ public class Database {
         }
     }
 
-    private Cursor query(String table, String[] columns, String selection, String[] selectionArgs,
-                         String groupBy, String having, String orderBy) throws Failure {
+    private Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
+                         String[] selectionArgs, String groupBy, String having, String orderBy) throws Failure {
         try {
             return sqlite.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
         } catch (SQLException e) {

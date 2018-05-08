@@ -41,10 +41,13 @@ public class MovementTypeButton extends Button {
     private void handleClick(final String movementType) throws Failure {
         final String activeRecordingType = m.getActiveRecordingType();
 
-        if (activeRecordingType.isEmpty()) {
-            startRecording(movementType);
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(Model.getInstance().getAnyContext())
+        if (!activeRecordingType.isEmpty()) {
+            if (m.getActiveDistance() == 0.0) {
+                handleStopConfirmed(movementType, activeRecordingType);
+                return;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext())
                     .setMessage("Really stop " + activeRecordingType + " recording?")
                     .setTitle("Stop recording?");
 
@@ -54,16 +57,22 @@ public class MovementTypeButton extends Button {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             try {
-                                m.stopRecording();
-                                if (!movementType.equals(activeRecordingType)) {
-                                    startRecording(movementType);
-                                }
+                                handleStopConfirmed(movementType, activeRecordingType);
                             } catch (Failure ignored) {
                             }
                         }
                     });
             alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
             alertDialog.show();
+        } else {
+            startRecording(movementType);
+        }
+    }
+
+    private void handleStopConfirmed(String movementType, String activeRecordingType) throws Failure {
+        m.stopRecording();
+        if (!movementType.equals(activeRecordingType)) {
+            startRecording(movementType);
         }
     }
 

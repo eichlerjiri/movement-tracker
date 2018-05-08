@@ -1,39 +1,33 @@
 package eichlerjiri.movementtracker;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
 import java.util.ArrayList;
 
-import eichlerjiri.movementtracker.db.HistoryItem;
-import eichlerjiri.movementtracker.db.LocationDb;
+import eichlerjiri.movementtracker.db.HistoryRow;
+import eichlerjiri.movementtracker.db.LocationRow;
+import eichlerjiri.movementtracker.ui.MapViewActivity;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
-public class MovementDetail extends Activity {
+public class MovementDetail extends MapViewActivity {
 
     private Model m;
-
-    private MapView mapView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         m = Model.getInstance();
         m.registerMovementDetail(this);
-        mapView = new MapView(this);
-        mapView.onCreate(savedInstanceState);
 
         try {
             doCreate();
@@ -42,46 +36,9 @@ public class MovementDetail extends Activity {
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        mapView.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mapView.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mapView.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         m.unregisterMovementDetail(this);
-        mapView.onDestroy();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        mapView.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
     }
 
     @Override
@@ -105,25 +62,25 @@ public class MovementDetail extends Activity {
 
         TextView tv = detailView.findViewById(R.id.detailText);
 
-        HistoryItem item = getHistoryItem();
+        HistoryRow item = getHistoryItem();
         if (item == null) {
             tv.setText("Detail not available");
             return;
         }
 
-        final ArrayList<LocationDb> locations = m.getDatabase().getLocationsBetween(item.getTsFrom(), item.getTsTo());
-
-        long from = item.getTsFrom();
-        long to = item.getTsTo();
+        long from = item.ts;
+        long to = item.tsEnd;
         long duration = to - from;
-        double distance = computeDistance(locations);
+        double distance = item.distance;
 
         boolean sameDay = FormatUtils.isSameDay(from, to);
+
+        final ArrayList<LocationRow> locations = m.getDatabase().getLocations(item.id);
 
         String text = "from " + FormatUtils.formatDateTime(from) +
                 " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
                 "locations: " + locations.size() + "\n" +
-                "type: " + item.getMovementType() + "\n" +
+                "type: " + item.movementType + "\n" +
                 "duration: " + FormatUtils.formatDuration(duration) + "\n" +
                 "distance: " + FormatUtils.formatDistance(distance);
 
@@ -148,7 +105,7 @@ public class MovementDetail extends Activity {
         });
     }
 
-    private HistoryItem getHistoryItem() throws Failure {
+    private HistoryRow getHistoryItem() throws Failure {
         Bundle b = getIntent().getExtras();
         if (b != null) {
             long id = b.getLong("id");
@@ -159,34 +116,26 @@ public class MovementDetail extends Activity {
         return null;
     }
 
-    private double computeDistance(ArrayList<LocationDb> locations) {
-        double ret = 0;
-        LocationDb prev = null;
-        for (LocationDb location : locations) {
-            if (prev != null) {
-                ret += GeoUtils.distance(prev.getLat(), prev.getLon(), location.getLat(), location.getLon());
-            }
-            prev = location;
+    private void drawLine(GoogleMap googleMap, ArrayList<LocationRow> locs) {
+        if (locs.isEmpty()) {
+            return;
         }
-        return ret;
-    }
 
-    private void drawLine(GoogleMap googleMap, ArrayList<LocationDb> locations) {
         double minLat = Double.MAX_VALUE;
         double minLon = Double.MAX_VALUE;
         double maxLat = Double.MIN_VALUE;
         double maxLon = Double.MIN_VALUE;
 
-        PolylineOptions polyline = new PolylineOptions();
-        for (LocationDb location : locations) {
-            minLat = Math.min(location.getLat(), minLat);
-            minLon = Math.min(location.getLon(), minLon);
-            maxLat = Math.max(location.getLat(), maxLat);
-            maxLon = Math.max(location.getLon(), maxLon);
-
-            polyline.add(new LatLng(location.getLat(), location.getLon()));
+        for (LocationRow location : locs) {
+            minLat = Math.min(location.lat, minLat);
+            minLon = Math.min(location.lon, minLon);
+            maxLat = Math.max(location.lat, maxLat);
+            maxLon = Math.max(location.lon, maxLon);
         }
-        googleMap.addPolyline(polyline);
+
+        googleMap.addPolyline(GeoUtils.createPolyline(locs));
+        googleMap.addMarker(GeoUtils.createMarker(locs.get(0), BitmapDescriptorFactory.HUE_GREEN));
+        googleMap.addMarker(GeoUtils.createMarker(locs.get(locs.size() - 1), BitmapDescriptorFactory.HUE_RED));
 
         GeoUtils.moveToRect(mapView, googleMap, minLat, minLon, maxLat, maxLon);
     }

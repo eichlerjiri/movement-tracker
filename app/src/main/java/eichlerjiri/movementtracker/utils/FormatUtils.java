@@ -43,7 +43,7 @@ public class FormatUtils {
     }
 
     public static String formatAccuracy(float accuracy) {
-        return new DecimalFormat("0.0", symbols()).format(accuracy) + "m";
+        return new DecimalFormat("0", symbols()).format(accuracy) + "m";
     }
 
     public static String formatDuration(long millis) {

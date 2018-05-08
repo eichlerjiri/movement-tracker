@@ -91,6 +91,10 @@ public class Model {
         return activeRecordingType;
     }
 
+    public long getActiveRecording() {
+        return activeRecording;
+    }
+
     public boolean isReceivingLocations() {
         return receivingLocations;
     }
@@ -132,7 +136,7 @@ public class Model {
             long now = System.currentTimeMillis();
 
             // nepouzivam location cas, zajima me soucasny cas zarizeni
-            getDatabase().saveLocation(now, location.getLatitude(), location.getLongitude());
+            getDatabase().saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
 
             activeTsTo = now;
             if (activeLocations != 0) {
@@ -181,7 +185,7 @@ public class Model {
 
     public void stopRecording() throws Failure {
         if (activeDistance != 0) {
-            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording);
+            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
         } else {
             getDatabase().deleteRecording(activeRecording);
         }
