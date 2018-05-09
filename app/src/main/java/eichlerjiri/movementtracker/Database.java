@@ -15,14 +15,14 @@ import eichlerjiri.movementtracker.utils.Failure;
 
 public class Database {
 
-    private final SQLiteDatabase db;
+    private final SQLiteDatabase d;
 
     public Database() throws Failure {
-        db = new SQLiteOpenHelper(Model.getInstance().getAnyContext(), "movement-tracker", null, 1) {
+        d = new SQLiteOpenHelper(Model.getInstance().getAnyContext(), "movement-tracker", null, 1) {
             @Override
-            public void onCreate(SQLiteDatabase sqlite) {
+            public void onCreate(SQLiteDatabase db) {
                 try {
-                    createDatabase(sqlite);
+                    createDatabase(db);
                 } catch (Failure ignored) {
                 }
             }
@@ -63,7 +63,7 @@ public class Database {
         values.put("ts", timestamp);
         values.put("lat", lat);
         values.put("lon", lon);
-        insert(db, "location", values);
+        insert(d, "location", values);
     }
 
     public long startRecording(long timestamp, String movementType) throws Failure {
@@ -72,24 +72,24 @@ public class Database {
         values.put("ts_end", 0L);
         values.put("movement_type", movementType);
         values.put("distance", 0.0);
-        return insert(db, "recording", values);
+        return insert(d, "recording", values);
     }
 
     public void finishRecording(long timestamp, long id, double distance) throws Failure {
         ContentValues values = new ContentValues();
         values.put("ts_end", timestamp);
         values.put("distance", distance);
-        update(db, "recording", values, "id=?", new String[]{String.valueOf(id)});
+        update(d, "recording", values, "id=?", new String[]{String.valueOf(id)});
     }
 
     public void deleteRecording(long id) throws Failure {
-        delete(db, "recording", "id=?", new String[]{String.valueOf(id)});
+        delete(d, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 
     public ArrayList<HistoryRow> getHistory() throws Failure {
         ArrayList<HistoryRow> ret = new ArrayList<>();
 
-        Cursor c = query(db, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
+        Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
                 "ts_end<>0", null, null, null, "ts DESC,id");
         while (c.moveToNext()) {
             ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
@@ -102,7 +102,7 @@ public class Database {
     public HistoryRow getHistoryItem(long id) throws Failure {
         HistoryRow ret = null;
 
-        Cursor c = query(db, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
+        Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
                 "ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null, null, null);
         if (c.moveToNext()) {
             ret = new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4));
@@ -115,7 +115,7 @@ public class Database {
     public ArrayList<LocationRow> getLocations(long idRecording) throws Failure {
         ArrayList<LocationRow> ret = new ArrayList<>();
 
-        Cursor c = query(db, "location", new String[]{"lat", "lon"}, "id_recording=?",
+        Cursor c = query(d, "location", new String[]{"lat", "lon"}, "id_recording=?",
                 new String[]{String.valueOf(idRecording)}, null, null, "ts,id");
         while (c.moveToNext()) {
             ret.add(new LocationRow(c.getDouble(0), c.getDouble(1)));

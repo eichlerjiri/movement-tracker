@@ -43,7 +43,8 @@ public class MovementTypeButton extends Button {
 
         if (!activeRecordingType.isEmpty()) {
             if (m.getActiveDistance() == 0.0) {
-                handleStopConfirmed(movementType, activeRecordingType);
+                m.stopAndDeleteRecording();
+                tryRestartRecording(movementType, activeRecordingType);
                 return;
             }
 
@@ -57,7 +58,8 @@ public class MovementTypeButton extends Button {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             try {
-                                handleStopConfirmed(movementType, activeRecordingType);
+                                m.stopAndFinishRecording();
+                                tryRestartRecording(movementType, activeRecordingType);
                             } catch (Failure ignored) {
                             }
                         }
@@ -69,8 +71,7 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void handleStopConfirmed(String movementType, String activeRecordingType) throws Failure {
-        m.stopRecording();
+    private void tryRestartRecording(String movementType, String activeRecordingType) throws Failure {
         if (!movementType.equals(activeRecordingType)) {
             startRecording(movementType);
         }

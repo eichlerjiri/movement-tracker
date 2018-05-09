@@ -52,8 +52,8 @@ public class TrackerMap {
 
         googleMap.setOnCameraMoveStartedListener(new GoogleMap.OnCameraMoveStartedListener() {
             @Override
-            public void onCameraMoveStarted(int var1) {
-                if (var1 == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+            public void onCameraMoveStarted(int i) {
+                if (i == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                     keepMapCentered = false;
                 }
             }
@@ -62,7 +62,6 @@ public class TrackerMap {
         googleMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             @Override
             public boolean onMyLocationButtonClick() {
-                keepMapCentered = true;
                 centerMap();
                 return true;
             }
@@ -106,11 +105,11 @@ public class TrackerMap {
     }
 
     private void centerMap() {
-        if (!m.getActiveRecordingType().isEmpty()) {
-            if (m.getActiveMinLat() != Double.MAX_VALUE) {
-                GeoUtils.moveToRect(mapView, googleMap, m.getActiveMinLat(), m.getActiveMinLon(),
-                        m.getActiveMaxLat(), m.getActiveMaxLon());
-            }
+        keepMapCentered = true;
+
+        if (!m.getActiveRecordingType().isEmpty() && m.getActiveDistance() != 0.0) {
+            GeoUtils.moveToRect(mapView, googleMap, m.getActiveMinLat(), m.getActiveMinLon(),
+                    m.getActiveMaxLat(), m.getActiveMaxLon());
         } else {
             Location l = m.getLastLocation();
             if (l != null) {
@@ -121,6 +120,7 @@ public class TrackerMap {
 
     public void recordingStarted() {
         polyline = googleMap.addPolyline(GeoUtils.createPolyline());
+        centerMap();
     }
 
     public void recordingStopped() {

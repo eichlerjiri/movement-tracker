@@ -183,12 +183,17 @@ public class Model {
         }
     }
 
-    public void stopRecording() throws Failure {
-        if (activeDistance != 0) {
-            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
-        } else {
-            getDatabase().deleteRecording(activeRecording);
-        }
+    public void stopAndFinishRecording() throws Failure {
+        getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
+        doStopRecording();
+    }
+
+    public void stopAndDeleteRecording() throws Failure {
+        getDatabase().deleteRecording(activeRecording);
+        doStopRecording();
+    }
+
+    private void doStopRecording() throws Failure {
         activeRecordingType = "";
 
         refreshReceiving();
