@@ -40,6 +40,10 @@ public class MovementTracker extends MapViewActivity {
     private ActionBar.Tab historyTab;
     private LinearLayout recordingView;
     private LinearLayout historyView;
+
+    private TextView recordingText;
+    private ListView historyList;
+
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
     private TrackerMap trackerMap;
@@ -101,12 +105,16 @@ public class MovementTracker extends MapViewActivity {
             initTrackingService();
         }
 
-        recordingView = (LinearLayout) getLayoutInflater().inflate(R.layout.recording, null);
+        recordingText = new TextView(this);
 
         buttons.add(new MovementTypeButton(this, "walk"));
         buttons.add(new MovementTypeButton(this, "run"));
         buttons.add(new MovementTypeButton(this, "bike"));
 
+        recordingView = new LinearLayout(this);
+        recordingView.setOrientation(LinearLayout.VERTICAL);
+
+        recordingView.addView(recordingText);
         for (MovementTypeButton button : buttons) {
             recordingView.addView(button);
         }
@@ -224,13 +232,16 @@ public class MovementTracker extends MapViewActivity {
             }
         }
 
-        TextView tv = recordingView.findViewById(R.id.text);
-        tv.setText(text);
+        recordingText.setText(text);
     }
 
     private View prepareHistoryView() throws Failure {
         if (historyView == null) {
-            historyView = (LinearLayout) getLayoutInflater().inflate(R.layout.history, null);
+            historyList = new ListView(this);
+
+            historyView = new LinearLayout(this);
+            historyView.addView(historyList);
+
             loadHistoryList();
         }
         return historyView;
@@ -245,7 +256,7 @@ public class MovementTracker extends MapViewActivity {
                     FormatUtils.formatDateTime(item.ts);
         }
 
-        ListView listView = historyView.findViewById(R.id.historyList);
+        ListView listView = historyList;
         listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

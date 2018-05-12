@@ -50,7 +50,13 @@ public class MovementDetail extends MapViewActivity {
     }
 
     private void doCreate() throws Failure {
-        LinearLayout detailView = (LinearLayout) getLayoutInflater().inflate(R.layout.detail, null);
+        TextView detailText = new TextView(this);
+
+        LinearLayout detailView = new LinearLayout(this);
+        detailView.setOrientation(LinearLayout.VERTICAL);
+
+        detailView.addView(detailText);
+        detailView.addView(mapView);
         setContentView(detailView);
 
         ActionBar actionBar = getActionBar();
@@ -60,11 +66,9 @@ public class MovementDetail extends MapViewActivity {
 
         actionBar.setDisplayHomeAsUpEnabled(true);
 
-        TextView tv = detailView.findViewById(R.id.detailText);
-
         HistoryRow item = getHistoryItem();
         if (item == null) {
-            tv.setText("Detail not available");
+            detailText.setText("Detail not available");
             return;
         }
 
@@ -89,9 +93,8 @@ public class MovementDetail extends MapViewActivity {
             text += "\navg. speed: " + FormatUtils.formatSpeed(avgSpeed);
         }
 
-        tv.setText(text);
+        detailText.setText(text);
 
-        detailView.addView(mapView);
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
