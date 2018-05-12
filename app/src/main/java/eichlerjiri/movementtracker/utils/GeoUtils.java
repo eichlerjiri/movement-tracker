@@ -37,7 +37,7 @@ public class GeoUtils {
         return distance / (duration / 1000.0);
     }
 
-    public static void waitForViewToBeReady(final MapView mapView, final Runnable callback) {
+    public static void waitForMapViewToBeReady(final MapView mapView, final Runnable callback) {
         if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
             callback.run();
         } else {
@@ -51,12 +51,11 @@ public class GeoUtils {
         }
     }
 
-    public static void moveToRect(MapView mapView, GoogleMap mapInterface, double minLat, double minLon,
-                                  double maxLat, double maxLon) {
-        int padding = (int) (mapView.getWidth() * 0.1f);
-
+    public static void moveToRect(MapView mapView, GoogleMap mapInterface, GeoBoundary geoBoundary) {
         mapInterface.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
-                new LatLng(minLat, minLon), new LatLng(maxLat, maxLon)), padding));
+                        new LatLng(geoBoundary.getMinLat(), geoBoundary.getMinLon()),
+                        new LatLng(geoBoundary.getMaxLat(), geoBoundary.getMaxLon())),
+                (int) (mapView.getWidth() * 0.1f)));
     }
 
     public static void moveToPoint(GoogleMap mapInterface, double lat, double lon) {

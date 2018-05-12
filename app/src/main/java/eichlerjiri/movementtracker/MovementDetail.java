@@ -1,7 +1,10 @@
 package eichlerjiri.movementtracker;
 
 import android.app.ActionBar;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -15,13 +18,16 @@ import java.util.ArrayList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.ui.MapViewActivity;
+import eichlerjiri.movementtracker.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class MovementDetail extends MapViewActivity {
 
     private Model m;
+    private HistoryRow recording;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,14 +55,30 @@ public class MovementDetail extends MapViewActivity {
         return true;
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if (recording != null) {
+            menu.add("delete recording").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    confirmDeleteRecording();
+                    return true;
+                }
+            });
+        }
+        return true;
+    }
+
     private void doCreate() throws Failure {
         TextView detailText = new TextView(this);
+
+        int padding = AndroidUtils.spToPix(this, 4.0f);
+        detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);
         detailView.setOrientation(LinearLayout.VERTICAL);
 
         detailView.addView(detailText);
-        detailView.addView(mapView);
         setContentView(detailView);
 
         ActionBar actionBar = getActionBar();
@@ -64,27 +86,30 @@ public class MovementDetail extends MapViewActivity {
             throw new Failure("Action bar not available");
         }
 
+        actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
-        HistoryRow item = getHistoryItem();
-        if (item == null) {
+        recording = getHistoryItem();
+        if (recording == null) {
             detailText.setText("Detail not available");
             return;
         }
 
-        long from = item.ts;
-        long to = item.tsEnd;
+        setTitle(recording.movementType);
+        detailView.addView(mapView); // after availability check
+
+        long from = recording.ts;
+        long to = recording.tsEnd;
         long duration = to - from;
-        double distance = item.distance;
+        double distance = recording.distance;
 
         boolean sameDay = FormatUtils.isSameDay(from, to);
 
-        final ArrayList<LocationRow> locations = m.getDatabase().getLocations(item.id);
+        final ArrayList<LocationRow> locations = m.getDatabase().getLocations(recording.id);
 
         String text = "from " + FormatUtils.formatDateTime(from) +
                 " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
                 "locations: " + locations.size() + "\n" +
-                "type: " + item.movementType + "\n" +
                 "duration: " + FormatUtils.formatDuration(duration) + "\n" +
                 "distance: " + FormatUtils.formatDistance(distance);
 
@@ -98,7 +123,7 @@ public class MovementDetail extends MapViewActivity {
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
-                GeoUtils.waitForViewToBeReady(mapView, new Runnable() {
+                GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
                     @Override
                     public void run() {
                         drawLine(googleMap, locations);
@@ -124,22 +149,39 @@ public class MovementDetail extends MapViewActivity {
             return;
         }
 
-        double minLat = Double.MAX_VALUE;
-        double minLon = Double.MAX_VALUE;
-        double maxLat = Double.MIN_VALUE;
-        double maxLon = Double.MIN_VALUE;
-
-        for (LocationRow location : locs) {
-            minLat = Math.min(location.lat, minLat);
-            minLon = Math.min(location.lon, minLon);
-            maxLat = Math.max(location.lat, maxLat);
-            maxLon = Math.max(location.lon, maxLon);
-        }
-
         googleMap.addPolyline(GeoUtils.createPolyline(locs));
         googleMap.addMarker(GeoUtils.createMarker(locs.get(0), BitmapDescriptorFactory.HUE_GREEN));
         googleMap.addMarker(GeoUtils.createMarker(locs.get(locs.size() - 1), BitmapDescriptorFactory.HUE_RED));
 
-        GeoUtils.moveToRect(mapView, googleMap, minLat, minLon, maxLat, maxLon);
+        GeoBoundary geoBoundary = new GeoBoundary();
+        for (LocationRow location : locs) {
+            geoBoundary.addPoint(location.lat, location.lon);
+        }
+        GeoUtils.moveToRect(mapView, googleMap, geoBoundary);
+    }
+
+    private void confirmDeleteRecording() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setMessage("Really delete recording?")
+                .setTitle("Delete recording?");
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Yes",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        try {
+                            doDeleteRecording();
+                        } catch (Failure ignored) {
+                        }
+                    }
+                });
+        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
+        alertDialog.show();
+    }
+
+    private void doDeleteRecording() throws Failure {
+        m.deleteRecording(recording.id);
+        finish();
     }
 }

@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
@@ -28,6 +29,7 @@ import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.MapViewActivity;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
+import eichlerjiri.movementtracker.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
@@ -79,13 +81,20 @@ public class MovementTracker extends MapViewActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        m.startedMovementTracker(this);
+        try {
+            m.startedMovementTracker(this);
+        } catch (Failure ignored) {
+        }
+
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        m.stoppedMovementTracker(this);
+        try {
+            m.stoppedMovementTracker(this);
+        } catch (Failure ignored) {
+        }
     }
 
     @Override
@@ -107,6 +116,9 @@ public class MovementTracker extends MapViewActivity {
 
         recordingText = new TextView(this);
 
+        int padding = AndroidUtils.spToPix(this, 4.0f);
+        recordingText.setPadding(padding, 0, padding, 0);
+
         buttons.add(new MovementTypeButton(this, "walk"));
         buttons.add(new MovementTypeButton(this, "run"));
         buttons.add(new MovementTypeButton(this, "bike"));
@@ -115,9 +127,17 @@ public class MovementTracker extends MapViewActivity {
         recordingView.setOrientation(LinearLayout.VERTICAL);
 
         recordingView.addView(recordingText);
+
+        LinearLayout buttonsLayout = new LinearLayout(this);
+        buttonsLayout.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         for (MovementTypeButton button : buttons) {
-            recordingView.addView(button);
+            button.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+            buttonsLayout.addView(button);
         }
+
+        recordingView.addView(buttonsLayout);
         recordingView.addView(mapView);
 
         setContentView(recordingView);
@@ -127,6 +147,8 @@ public class MovementTracker extends MapViewActivity {
             throw new Failure("Action bar not available");
         }
 
+        actionBar.setDisplayShowTitleEnabled(false);
+        actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
         ActionBar.TabListener tabListener = new ActionBar.TabListener() {
@@ -166,7 +188,7 @@ public class MovementTracker extends MapViewActivity {
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
-                GeoUtils.waitForViewToBeReady(mapView, new Runnable() {
+                GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -202,15 +224,15 @@ public class MovementTracker extends MapViewActivity {
     }
 
     private void updateText() {
-        String text;
+        String text = "GPS: ";
 
         Location l = m.getLastLocation();
         if (l != null) {
-            text = "GPS: " + FormatUtils.formatCoord(l.getLatitude()) +
+            text += FormatUtils.formatCoord(l.getLatitude()) +
                     " " + FormatUtils.formatCoord(l.getLongitude()) +
                     " " + FormatUtils.formatAccuracy(l.getAccuracy());
         } else {
-            text = "GPS: not yet obtained";
+            text += "not available";
         }
 
         if (!m.getActiveRecordingType().isEmpty()) {
@@ -220,8 +242,8 @@ public class MovementTracker extends MapViewActivity {
 
             boolean sameDay = FormatUtils.isSameDay(from, to);
 
-            text += "\nfrom " + FormatUtils.formatDateTimeSecs(from) +
-                    " to " + (sameDay ? FormatUtils.formatTimeSecs(to) : FormatUtils.formatDateTimeSecs(to)) + "\n" +
+            text += "\nfrom " + FormatUtils.formatDateTime(from) +
+                    " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
                     "locations: " + m.getActiveLocations() + "\n" +
                     "duration: " + FormatUtils.formatDuration(duration) + "\n" +
                     "distance: " + FormatUtils.formatDistance(m.getActiveDistance());
@@ -237,17 +259,23 @@ public class MovementTracker extends MapViewActivity {
 
     private View prepareHistoryView() throws Failure {
         if (historyView == null) {
-            historyList = new ListView(this);
-
             historyView = new LinearLayout(this);
+
+            historyList = new ListView(this);
+            historyList.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
             historyView.addView(historyList);
 
-            loadHistoryList();
+            reloadHistoryList();
         }
         return historyView;
     }
 
-    private void loadHistoryList() throws Failure {
+    public void reloadHistoryList() throws Failure {
+        if (historyList == null) {
+            return;
+        }
+
         final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory();
         String[] items = new String[historyItems.size()];
         for (int i = 0; i < items.length; i++) {
@@ -268,10 +296,10 @@ public class MovementTracker extends MapViewActivity {
         });
     }
 
-    public void lastLocationUpdated() {
+    public void lastLocationUpdated(boolean recorded) {
         updateText();
         if (trackerMap != null) {
-            trackerMap.updateLocation();
+            trackerMap.updateLocation(recorded);
         }
     }
 
@@ -291,8 +319,6 @@ public class MovementTracker extends MapViewActivity {
         if (trackerMap != null) {
             trackerMap.recordingStopped();
         }
-        if (historyView != null) {
-            loadHistoryList();
-        }
+        reloadHistoryList();
     }
 }

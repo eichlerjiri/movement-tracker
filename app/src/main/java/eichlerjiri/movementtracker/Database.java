@@ -83,6 +83,7 @@ public class Database {
     }
 
     public void deleteRecording(long id) throws Failure {
+        delete(d, "location", "id_recording=?", new String[]{String.valueOf(id)});
         delete(d, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 

@@ -20,6 +20,7 @@ import java.util.List;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.Failure;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class TrackerMap {
@@ -80,14 +81,14 @@ public class TrackerMap {
         tryEnableSelfLocations(c);
     }
 
-    public void updateLocation() {
+    public void updateLocation(boolean recorded) {
         Location l = m.getLastLocation();
 
         if (googleLocationChangedListener != null) {
             googleLocationChangedListener.onLocationChanged(l);
         }
 
-        if (!m.getActiveRecordingType().isEmpty()) {
+        if (recorded) {
             LatLng latLng = new LatLng(l.getLatitude(), l.getLongitude());
 
             List<LatLng> points = polyline.getPoints();
@@ -107,9 +108,15 @@ public class TrackerMap {
     private void centerMap() {
         keepMapCentered = true;
 
-        if (!m.getActiveRecordingType().isEmpty() && m.getActiveDistance() != 0.0) {
-            GeoUtils.moveToRect(mapView, googleMap, m.getActiveMinLat(), m.getActiveMinLon(),
-                    m.getActiveMaxLat(), m.getActiveMaxLon());
+        if (!m.getActiveRecordingType().isEmpty() && m.getActiveLocations() >= 2) {
+            GeoBoundary geoBoundary = m.getActiveGeoBoundary();
+            Location l = m.getLastLocation();
+            if (l != null) {
+                geoBoundary = new GeoBoundary(geoBoundary);
+                geoBoundary.addPoint(l.getLatitude(), l.getLongitude());
+            }
+
+            GeoUtils.moveToRect(mapView, googleMap, geoBoundary);
         } else {
             Location l = m.getLastLocation();
             if (l != null) {
@@ -120,7 +127,6 @@ public class TrackerMap {
 
     public void recordingStarted() {
         polyline = googleMap.addPolyline(GeoUtils.createPolyline());
-        centerMap();
     }
 
     public void recordingStopped() {

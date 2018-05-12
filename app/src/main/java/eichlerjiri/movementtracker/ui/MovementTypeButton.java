@@ -15,12 +15,14 @@ public class MovementTypeButton extends Button {
 
     private final Model m;
     private final Drawable originalBackground;
+    private final int originalTextColor;
 
     public MovementTypeButton(Context c, final String movementType) {
         super(c);
         m = Model.getInstance();
 
         originalBackground = getBackground();
+        originalTextColor = getCurrentTextColor();
 
         setText(movementType);
         setOnClickListener(new View.OnClickListener() {
@@ -42,9 +44,8 @@ public class MovementTypeButton extends Button {
         final String activeRecordingType = m.getActiveRecordingType();
 
         if (!activeRecordingType.isEmpty()) {
-            if (m.getActiveDistance() == 0.0) {
-                m.stopAndDeleteRecording();
-                tryRestartRecording(movementType, activeRecordingType);
+            if (m.getActiveLocations() < 2) {
+                restartRecording(movementType, activeRecordingType, true);
                 return;
             }
 
@@ -58,8 +59,7 @@ public class MovementTypeButton extends Button {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             try {
-                                m.stopAndFinishRecording();
-                                tryRestartRecording(movementType, activeRecordingType);
+                                restartRecording(movementType, activeRecordingType, false);
                             } catch (Failure ignored) {
                             }
                         }
@@ -71,7 +71,8 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void tryRestartRecording(String movementType, String activeRecordingType) throws Failure {
+    private void restartRecording(String movementType, String activeRecordingType, boolean delete) throws Failure {
+        m.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
             startRecording(movementType);
         }
@@ -80,9 +81,11 @@ public class MovementTypeButton extends Button {
     private void startRecording(String movementType) throws Failure {
         m.startRecording(movementType);
         setBackgroundColor(Color.GREEN);
+        setTextColor(Color.BLACK);
     }
 
     public void resetBackground() {
         setBackgroundDrawable(originalBackground);
+        setTextColor(originalTextColor);
     }
 }

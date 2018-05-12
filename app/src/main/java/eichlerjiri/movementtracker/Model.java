@@ -6,6 +6,7 @@ import android.location.Location;
 import java.util.ArrayList;
 
 import eichlerjiri.movementtracker.utils.Failure;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class Model {
@@ -26,17 +27,15 @@ public class Model {
     private boolean receivingLocations;
     private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
 
+    private long activeRecording;
     private String activeRecordingType = "";
 
-    private long activeRecording;
     private long activeTsFrom;
     private long activeTsTo;
     private long activeLocations;
     private double activeDistance;
-    private double activeMinLat;
-    private double activeMinLon;
-    private double activeMaxLat;
-    private double activeMaxLon;
+    private GeoBoundary activeGeoBoundary;
+    private Location lastRecordedLocation;
 
     private int notificationCounter;
 
@@ -115,47 +114,51 @@ public class Model {
         return activeDistance;
     }
 
-    public double getActiveMinLat() {
-        return activeMinLat;
-    }
-
-    public double getActiveMinLon() {
-        return activeMinLon;
-    }
-
-    public double getActiveMaxLat() {
-        return activeMaxLat;
-    }
-
-    public double getActiveMaxLon() {
-        return activeMaxLon;
+    public GeoBoundary getActiveGeoBoundary() {
+        return activeGeoBoundary;
     }
 
     public void locationArrived(Location location) throws Failure {
-        if (!activeRecordingType.isEmpty()) {
-            long now = System.currentTimeMillis();
-
-            // nepouzivam location cas, zajima me soucasny cas zarizeni
-            getDatabase().saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
-
-            activeTsTo = now;
-            if (activeLocations != 0) {
-                activeDistance += GeoUtils.distance(lastLocation.getLatitude(), lastLocation.getLongitude(),
-                        location.getLatitude(), location.getLongitude());
-            }
-            activeLocations++;
-
-            activeMinLat = Math.min(activeMinLat, location.getLatitude());
-            activeMinLon = Math.min(activeMinLon, location.getLongitude());
-            activeMaxLat = Math.max(activeMaxLat, location.getLatitude());
-            activeMaxLon = Math.max(activeMaxLon, location.getLongitude());
-        }
-
+        boolean recorded = recordLocation(location, false);
         lastLocation = location;
 
         for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.lastLocationUpdated();
+            movementTracker.lastLocationUpdated(recorded);
         }
+    }
+
+    private boolean recordLocation(Location location, boolean last) throws Failure {
+        if (activeRecordingType.isEmpty()) {
+            return false;
+        }
+
+        if (activeLocations == 0) {
+            doRecordLocation(location);
+            return true;
+        }
+
+        double distance = GeoUtils.distance(lastRecordedLocation.getLatitude(), lastRecordedLocation.getLongitude(),
+                location.getLatitude(), location.getLongitude());
+
+        if (distance >= lastRecordedLocation.getAccuracy() + location.getAccuracy() || (last && distance > 0)) {
+            doRecordLocation(location);
+            activeDistance += distance;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void doRecordLocation(Location location) throws Failure {
+        long now = System.currentTimeMillis();
+
+        // nepouzivam location cas, zajima me soucasny cas zarizeni
+        getDatabase().saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
+
+        activeTsTo = now;
+        activeLocations++;
+        activeGeoBoundary.addPoint(location.getLatitude(), location.getLongitude());
+        lastRecordedLocation = location;
     }
 
     public void startRecording(String movementType) throws Failure {
@@ -168,10 +171,8 @@ public class Model {
         activeTsTo = now;
         activeLocations = 0;
         activeDistance = 0.0;
-        activeMinLat = Double.MAX_VALUE;
-        activeMinLon = Double.MAX_VALUE;
-        activeMaxLat = Double.MIN_VALUE;
-        activeMaxLon = Double.MIN_VALUE;
+        activeGeoBoundary = new GeoBoundary();
+        lastRecordedLocation = null;
 
         refreshReceiving();
 
@@ -183,17 +184,17 @@ public class Model {
         }
     }
 
-    public void stopAndFinishRecording() throws Failure {
-        getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
-        doStopRecording();
-    }
+    public void stopRecording(boolean delete) throws Failure {
+        if (lastRecordedLocation != null && lastRecordedLocation != lastLocation) {
+            recordLocation(lastLocation, true);
+        }
 
-    public void stopAndDeleteRecording() throws Failure {
-        getDatabase().deleteRecording(activeRecording);
-        doStopRecording();
-    }
+        if (delete) {
+            getDatabase().deleteRecording(activeRecording);
+        } else {
+            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
+        }
 
-    private void doStopRecording() throws Failure {
         activeRecordingType = "";
 
         refreshReceiving();
@@ -206,17 +207,24 @@ public class Model {
         }
     }
 
-    public void startedMovementTracker(MovementTracker movementTracker) {
+    public void deleteRecording(long id) throws Failure {
+        getDatabase().deleteRecording(id);
+        for (MovementTracker movementTracker : movementTrackers) {
+            movementTracker.reloadHistoryList();
+        }
+    }
+
+    public void startedMovementTracker(MovementTracker movementTracker) throws Failure {
         startedMovementTrackers.add(movementTracker);
         refreshReceiving();
     }
 
-    public void stoppedMovementTracker(MovementTracker movementTracker) {
+    public void stoppedMovementTracker(MovementTracker movementTracker) throws Failure {
         startedMovementTrackers.remove(movementTracker);
         refreshReceiving();
     }
 
-    private void refreshReceiving() {
+    private void refreshReceiving() throws Failure {
         boolean requested = !startedMovementTrackers.isEmpty() || !activeRecordingType.isEmpty();
 
         if (requested && !receivingLocations) {

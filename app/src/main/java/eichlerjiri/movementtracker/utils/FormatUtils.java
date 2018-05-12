@@ -13,16 +13,8 @@ public class FormatUtils {
         return format(millis, "d.M.yyyy HH:mm");
     }
 
-    public static String formatDateTimeSecs(long millis) {
-        return format(millis, "d.M.yyyy HH:mm:ss");
-    }
-
     public static String formatTime(long millis) {
         return format(millis, "HH:mm");
-    }
-
-    public static String formatTimeSecs(long millis) {
-        return format(millis, "HH:mm:ss");
     }
 
     private static String format(long millis, String template) {
