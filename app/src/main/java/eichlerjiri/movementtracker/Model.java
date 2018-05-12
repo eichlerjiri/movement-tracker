@@ -152,7 +152,7 @@ public class Model {
     private void doRecordLocation(Location location) throws Failure {
         long now = System.currentTimeMillis();
 
-        // nepouzivam location cas, zajima me soucasny cas zarizeni
+        // using device-time, not location time
         getDatabase().saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
 
         activeTsTo = now;
