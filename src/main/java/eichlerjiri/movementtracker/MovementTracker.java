@@ -23,10 +23,9 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-import eichlerjiri.map.GLMap;
+import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
-import eichlerjiri.movementtracker.ui.TrackerMap;
 import eichlerjiri.movementtracker.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
@@ -46,7 +45,7 @@ public class MovementTracker extends Activity {
 
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
-    private GLMap map;
+    private MapComponent map;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -136,7 +135,7 @@ public class MovementTracker extends Activity {
 
         recordingView.addView(buttonsLayout);
 
-        map = new GLMap(this);
+        map = new MapComponent(this);
         recordingView.addView(map);
 
         setContentView(recordingView);
