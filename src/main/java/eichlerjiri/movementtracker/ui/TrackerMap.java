@@ -1,31 +1,8 @@
 package eichlerjiri.movementtracker.ui;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.location.Location;
-import android.os.Build;
-
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.Polyline;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import eichlerjiri.movementtracker.Model;
-import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
-import eichlerjiri.movementtracker.utils.GeoUtils;
-
 public class TrackerMap {
 
-    private final Model m;
+   /* private final Model m;
     private final MapView mapView;
     private final GoogleMap googleMap;
 
@@ -142,5 +119,5 @@ public class TrackerMap {
                 == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
         }
-    }
+    }*/
 }

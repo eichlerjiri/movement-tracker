@@ -1,6 +1,7 @@
 package eichlerjiri.movementtracker;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -9,22 +10,17 @@ import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-
 import java.util.ArrayList;
 
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.ui.MapViewActivity;
 import eichlerjiri.movementtracker.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
-public class MovementDetail extends MapViewActivity {
+public class MovementDetail extends Activity {
 
     private Model m;
     private HistoryRow recording;
@@ -96,7 +92,7 @@ public class MovementDetail extends MapViewActivity {
         }
 
         setTitle(recording.movementType);
-        detailView.addView(mapView); // after availability check
+        //detailView.addView(mapView); // after availability check
 
         long from = recording.ts;
         long to = recording.tsEnd;
@@ -120,7 +116,7 @@ public class MovementDetail extends MapViewActivity {
 
         detailText.setText(text);
 
-        mapView.getMapAsync(new OnMapReadyCallback() {
+      /*  mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
                 GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
@@ -130,7 +126,7 @@ public class MovementDetail extends MapViewActivity {
                     }
                 });
             }
-        });
+        });*/
     }
 
     private HistoryRow getHistoryItem() throws Failure {
@@ -144,7 +140,7 @@ public class MovementDetail extends MapViewActivity {
         return null;
     }
 
-    private void drawLine(GoogleMap googleMap, ArrayList<LocationRow> locs) {
+  /*  private void drawLine(GoogleMap googleMap, ArrayList<LocationRow> locs) {
         if (locs.isEmpty()) {
             return;
         }
@@ -158,7 +154,7 @@ public class MovementDetail extends MapViewActivity {
             geoBoundary.addPoint(location.lat, location.lon);
         }
         GeoUtils.moveToRect(mapView, googleMap, geoBoundary);
-    }
+    }*/
 
     private void confirmDeleteRecording() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)

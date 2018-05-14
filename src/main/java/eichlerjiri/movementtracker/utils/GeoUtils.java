@@ -1,20 +1,5 @@
 package eichlerjiri.movementtracker.utils;
 
-import android.view.ViewTreeObserver;
-
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.util.ArrayList;
-
-import eichlerjiri.movementtracker.db.LocationRow;
-
 public class GeoUtils {
 
     public static double distance(double lat1, double lon1, double lat2, double lon2) {
@@ -37,7 +22,7 @@ public class GeoUtils {
         return distance / (duration / 1000.0);
     }
 
-    public static void waitForMapViewToBeReady(final MapView mapView, final Runnable callback) {
+ /*   public static void waitForMapViewToBeReady(final MapView mapView, final Runnable callback) {
         if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
             callback.run();
         } else {
@@ -81,7 +66,7 @@ public class GeoUtils {
     public static MarkerOptions createMarker(LatLng latLng, float marker) {
         return new MarkerOptions().position(latLng).icon(
                 BitmapDescriptorFactory.defaultMarker(marker));
-    }
+    }*/
 
     private static double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);

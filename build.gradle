@@ -9,9 +9,25 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        google()
-        jcenter()
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId "eichlerjiri.movementtracker"
+        minSdkVersion 14
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        resValue "string", "google_maps_key", project.findProperty("GOOGLE_MAPS_API_KEY")
     }
+}
+
+repositories {
+    google()
+    jcenter()
+}
+
+dependencies {
+    compile project(':map-component')
 }

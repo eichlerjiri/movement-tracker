@@ -2,6 +2,7 @@ package eichlerjiri.movementtracker;
 
 import android.Manifest;
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -11,7 +12,6 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -20,13 +20,11 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 
 import java.util.ArrayList;
 
+import eichlerjiri.map.GLMap;
 import eichlerjiri.movementtracker.db.HistoryRow;
-import eichlerjiri.movementtracker.ui.MapViewActivity;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
 import eichlerjiri.movementtracker.utils.AndroidUtils;
@@ -34,7 +32,7 @@ import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
-public class MovementTracker extends MapViewActivity {
+public class MovementTracker extends Activity {
 
     private Model m;
 
@@ -48,7 +46,7 @@ public class MovementTracker extends MapViewActivity {
 
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
-    private TrackerMap trackerMap;
+    private GLMap map;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -98,8 +96,7 @@ public class MovementTracker extends MapViewActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         try {
             handlePermissionsResult(permissions, grantResults);
         } catch (Failure ignored) {
@@ -138,7 +135,9 @@ public class MovementTracker extends MapViewActivity {
         }
 
         recordingView.addView(buttonsLayout);
-        recordingView.addView(mapView);
+
+        map = new GLMap(this);
+        recordingView.addView(map);
 
         setContentView(recordingView);
 
@@ -185,7 +184,7 @@ public class MovementTracker extends MapViewActivity {
 
         updateText();
 
-        mapView.getMapAsync(new OnMapReadyCallback() {
+      /*  mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
                 GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
@@ -198,7 +197,7 @@ public class MovementTracker extends MapViewActivity {
                     }
                 });
             }
-        });
+        });*/
     }
 
     private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
@@ -209,9 +208,9 @@ public class MovementTracker extends MapViewActivity {
                 }
 
                 initTrackingService();
-                if (trackerMap != null) {
-                    trackerMap.tryEnableSelfLocations(this);
-                }
+                //     if (trackerMap != null) {
+                //            trackerMap.tryEnableSelfLocations(this);
+                //       }
                 break;
             }
         }
@@ -298,16 +297,16 @@ public class MovementTracker extends MapViewActivity {
 
     public void lastLocationUpdated(boolean recorded) {
         updateText();
-        if (trackerMap != null) {
-            trackerMap.updateLocation(recorded);
-        }
+        //     if (trackerMap != null) {
+        //          trackerMap.updateLocation(recorded);
+        //      }
     }
 
     public void recordingStarted() {
         updateText();
-        if (trackerMap != null) {
-            trackerMap.recordingStarted();
-        }
+        //       if (trackerMap != null) {
+        //           trackerMap.recordingStarted();
+        //      }
     }
 
     public void recordingStopped() throws Failure {
@@ -316,9 +315,9 @@ public class MovementTracker extends MapViewActivity {
         }
 
         updateText();
-        if (trackerMap != null) {
-            trackerMap.recordingStopped();
-        }
+        //     if (trackerMap != null) {
+        //          trackerMap.recordingStopped();
+        //    }
         reloadHistoryList();
     }
 }
