@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.movementtracker.db.HistoryRow;
@@ -135,7 +136,9 @@ public class MovementTracker extends Activity {
 
         recordingView.addView(buttonsLayout);
 
-        map = new MapComponent(this);
+        ArrayList<String> urls = new ArrayList<>();
+
+        map = new MapComponent(this, urls);
         recordingView.addView(map);
 
         setContentView(recordingView);
