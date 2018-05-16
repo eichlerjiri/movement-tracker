@@ -17,9 +17,5 @@
         <activity android:name="eichlerjiri.movementtracker.MovementDetail" />
 
         <service android:name="eichlerjiri.movementtracker.TrackingService" />
-
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
     </application>
 </manifest>

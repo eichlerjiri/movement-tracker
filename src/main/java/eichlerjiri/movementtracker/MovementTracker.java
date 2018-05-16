@@ -31,6 +31,7 @@ import eichlerjiri.movementtracker.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
+import eichlerjiri.movementtracker.utils.StringUtils;
 
 public class MovementTracker extends Activity {
 
@@ -136,9 +137,7 @@ public class MovementTracker extends Activity {
 
         recordingView.addView(buttonsLayout);
 
-        ArrayList<String> urls = new ArrayList<>();
-
-        map = new MapComponent(this, urls);
+        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
         recordingView.addView(map);
 
         setContentView(recordingView);
