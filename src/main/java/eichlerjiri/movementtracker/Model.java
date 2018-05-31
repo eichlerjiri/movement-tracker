@@ -6,7 +6,7 @@ import android.location.Location;
 import java.util.ArrayList;
 
 import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
+import eichlerjiri.mapcomponent.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
 
 public class Model {

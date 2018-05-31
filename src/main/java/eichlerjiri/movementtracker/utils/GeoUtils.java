@@ -22,52 +22,6 @@ public class GeoUtils {
         return distance / (duration / 1000.0);
     }
 
- /*   public static void waitForMapViewToBeReady(final MapView mapView, final Runnable callback) {
-        if (mapView.getWidth() != 0 && mapView.getHeight() != 0) {
-            callback.run();
-        } else {
-            mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                    callback.run();
-                }
-            });
-        }
-    }
-
-    public static void moveToRect(MapView mapView, GoogleMap mapInterface, GeoBoundary geoBoundary) {
-        mapInterface.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
-                        new LatLng(geoBoundary.getMinLat(), geoBoundary.getMinLon()),
-                        new LatLng(geoBoundary.getMaxLat(), geoBoundary.getMaxLon())),
-                (int) (mapView.getWidth() * 0.1f)));
-    }
-
-    public static void moveToPoint(GoogleMap mapInterface, double lat, double lon) {
-        mapInterface.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 15));
-    }
-
-    public static PolylineOptions createPolyline(ArrayList<LocationRow> locs) {
-        PolylineOptions polyline = createPolyline();
-        for (LocationRow location : locs) {
-            polyline.add(new LatLng(location.lat, location.lon));
-        }
-        return polyline;
-    }
-
-    public static PolylineOptions createPolyline() {
-        return new PolylineOptions().width(5.0f);
-    }
-
-    public static MarkerOptions createMarker(LocationRow loc, float marker) {
-        return createMarker(new LatLng(loc.lat, loc.lon), marker);
-    }
-
-    public static MarkerOptions createMarker(LatLng latLng, float marker) {
-        return new MarkerOptions().position(latLng).icon(
-                BitmapDescriptorFactory.defaultMarker(marker));
-    }*/
-
     private static double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
     }

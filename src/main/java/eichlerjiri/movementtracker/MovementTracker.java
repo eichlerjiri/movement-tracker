@@ -20,14 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
-import eichlerjiri.movementtracker.utils.AndroidUtils;
+import eichlerjiri.movementtracker.ui.TrackerMap;
+import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
@@ -47,7 +45,7 @@ public class MovementTracker extends Activity {
 
     private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
 
-    private MapComponent map;
+    private TrackerMap map;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -58,6 +56,7 @@ public class MovementTracker extends Activity {
         public void onServiceDisconnected(ComponentName name) {
         }
     };
+    private boolean serviceBound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +74,10 @@ public class MovementTracker extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         m.unregisterMovementTracker(this);
+
+        if (serviceBound) {
+            unbindService(serviceConnection);
+        }
     }
 
     @Override
@@ -84,7 +87,6 @@ public class MovementTracker extends Activity {
             m.startedMovementTracker(this);
         } catch (Failure ignored) {
         }
-
     }
 
     @Override
@@ -114,7 +116,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = AndroidUtils.spToPix(this, 4.0f);
+        int padding = Math.round(AndroidUtils.spToPix(this, 4.0f));
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));
@@ -137,7 +139,7 @@ public class MovementTracker extends Activity {
 
         recordingView.addView(buttonsLayout);
 
-        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+        map = new TrackerMap(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
         recordingView.addView(map);
 
         setContentView(recordingView);
@@ -184,21 +186,6 @@ public class MovementTracker extends Activity {
         actionBar.addTab(historyTab);
 
         updateText();
-
-      /*  mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(final GoogleMap googleMap) {
-                GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            trackerMap = new TrackerMap(MovementTracker.this, mapView, googleMap);
-                        } catch (Failure ignored) {
-                        }
-                    }
-                });
-            }
-        });*/
     }
 
     private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
@@ -209,9 +196,6 @@ public class MovementTracker extends Activity {
                 }
 
                 initTrackingService();
-                //     if (trackerMap != null) {
-                //            trackerMap.tryEnableSelfLocations(this);
-                //       }
                 break;
             }
         }
@@ -221,6 +205,7 @@ public class MovementTracker extends Activity {
         Intent intent = new Intent(this, TrackingService.class);
         startService(intent);
         bindService(intent, serviceConnection, 0);
+        serviceBound = true;
     }
 
     private void updateText() {
@@ -298,16 +283,11 @@ public class MovementTracker extends Activity {
 
     public void lastLocationUpdated(boolean recorded) {
         updateText();
-        //     if (trackerMap != null) {
-        //          trackerMap.updateLocation(recorded);
-        //      }
+        map.updateLocation(recorded);
     }
 
     public void recordingStarted() {
         updateText();
-        //       if (trackerMap != null) {
-        //           trackerMap.recordingStarted();
-        //      }
     }
 
     public void recordingStopped() throws Failure {
@@ -316,9 +296,7 @@ public class MovementTracker extends Activity {
         }
 
         updateText();
-        //     if (trackerMap != null) {
-        //          trackerMap.recordingStopped();
-        //    }
+        map.recordingStopped();
         reloadHistoryList();
     }
 }

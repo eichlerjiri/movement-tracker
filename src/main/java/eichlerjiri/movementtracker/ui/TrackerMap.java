@@ -1,123 +1,116 @@
 package eichlerjiri.movementtracker.ui;
 
-public class TrackerMap {
+import android.content.Context;
+import android.location.Location;
+import android.view.ViewTreeObserver;
 
-   /* private final Model m;
-    private final MapView mapView;
-    private final GoogleMap googleMap;
+import java.util.ArrayList;
 
-    private LocationSource.OnLocationChangedListener googleLocationChangedListener;
-    private boolean keepMapCentered = true;
-    private Polyline polyline;
-    private Marker marker;
+import eichlerjiri.mapcomponent.MapComponent;
+import eichlerjiri.mapcomponent.utils.DoubleArrayList;
+import eichlerjiri.mapcomponent.utils.GeoBoundary;
+import eichlerjiri.movementtracker.Model;
+import eichlerjiri.movementtracker.db.LocationRow;
+import eichlerjiri.movementtracker.utils.Failure;
 
-    public TrackerMap(Context c, MapView mapView, GoogleMap googleMap) throws Failure {
+public class TrackerMap extends MapComponent {
+
+    private final Model m;
+
+    private boolean startDisplayed;
+    private DoubleArrayList pathPositions = new DoubleArrayList();
+
+    public TrackerMap(Context c, ArrayList<String> mapUrls) {
+        super(c, mapUrls);
         m = Model.getInstance();
-        this.mapView = mapView;
-        this.googleMap = googleMap;
 
-        googleMap.setLocationSource(new LocationSource() {
-            @Override
-            public void activate(LocationSource.OnLocationChangedListener onLocationChangedListener) {
-                googleLocationChangedListener = onLocationChangedListener;
-            }
+        try {
+            doInit();
+        } catch (Failure ignored) {
+        }
+    }
 
-            @Override
-            public void deactivate() {
-                googleLocationChangedListener = null;
-            }
-        });
+    private void doInit() throws Failure {
+        centered = true;
 
-        googleMap.setOnCameraMoveStartedListener(new GoogleMap.OnCameraMoveStartedListener() {
-            @Override
-            public void onCameraMoveStarted(int i) {
-                if (i == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
-                    keepMapCentered = false;
-                }
-            }
-        });
-
-        googleMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-            @Override
-            public boolean onMyLocationButtonClick() {
-                centerMap();
-                return true;
-            }
-        });
+        Location l = m.getLastLocation();
+        if (l != null) {
+            moveTo(l.getLatitude(), l.getLongitude(), 18);
+        } else {
+            moveTo(50.083333, 14.416667, 4); // prague
+        }
 
         if (!m.getActiveRecordingType().isEmpty()) {
             ArrayList<LocationRow> locs = m.getDatabase().getLocations(m.getActiveRecording());
 
-            polyline = googleMap.addPolyline(GeoUtils.createPolyline(locs));
+            for (LocationRow row : locs) {
+                pathPositions.add(row.lat, row.lon);
+            }
+            setPath(pathPositions);
+
             if (!locs.isEmpty()) {
-                marker = googleMap.addMarker(GeoUtils.createMarker(locs.get(0), BitmapDescriptorFactory.HUE_GREEN));
+                LocationRow first = locs.get(0);
+                setStartPosition(first.lat, first.lon);
+                startDisplayed = true;
             }
         }
 
-        centerMap();
-        tryEnableSelfLocations(c);
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            private boolean done;
+
+            @Override
+            public void onGlobalLayout() {
+                if (!done) {
+                    done = true;
+                    if (m.getActiveLocations() != 0) {
+                        moveToBoundary(m.getActiveGeoBoundary(), getWidth(), getHeight(), 18, 30);
+                    }
+                }
+            }
+        });
     }
 
     public void updateLocation(boolean recorded) {
         Location l = m.getLastLocation();
+        double lat = l.getLatitude();
+        double lon = l.getLongitude();
 
-        if (googleLocationChangedListener != null) {
-            googleLocationChangedListener.onLocationChanged(l);
-        }
+        setCurrentPosition(l);
 
         if (recorded) {
-            LatLng latLng = new LatLng(l.getLatitude(), l.getLongitude());
-
-            List<LatLng> points = polyline.getPoints();
-            points.add(latLng);
-            polyline.setPoints(points);
-
-            if (marker == null) {
-                marker = googleMap.addMarker(GeoUtils.createMarker(latLng, BitmapDescriptorFactory.HUE_GREEN));
-            }
-        }
-
-        if (keepMapCentered) {
-            centerMap();
-        }
-    }
-
-    private void centerMap() {
-        keepMapCentered = true;
-
-        if (!m.getActiveRecordingType().isEmpty() && m.getActiveLocations() >= 2) {
-            GeoBoundary geoBoundary = m.getActiveGeoBoundary();
-            Location l = m.getLastLocation();
-            if (l != null) {
-                geoBoundary = new GeoBoundary(geoBoundary);
-                geoBoundary.addPoint(l.getLatitude(), l.getLongitude());
+            if (!startDisplayed) {
+                setStartPosition(lat, lon);
+                startDisplayed = true;
             }
 
-            GeoUtils.moveToRect(mapView, googleMap, geoBoundary);
-        } else {
-            Location l = m.getLastLocation();
-            if (l != null) {
-                GeoUtils.moveToPoint(googleMap, l.getLatitude(), l.getLongitude());
+            pathPositions.add(lat, lon);
+            setPath(pathPositions);
+        }
+
+        if (centered) {
+            if (!m.getActiveRecordingType().isEmpty()) {
+                GeoBoundary geoBoundary = new GeoBoundary(m.getActiveGeoBoundary());
+                geoBoundary.addPoint(lat, lon);
+                moveToBoundary(geoBoundary, getWidth(), getHeight(), 18, 30);
+            } else {
+                moveTo(lat, lon, 18);
             }
         }
-    }
-
-    public void recordingStarted() {
-        polyline = googleMap.addPolyline(GeoUtils.createPolyline());
     }
 
     public void recordingStopped() {
-        polyline.remove();
-        if (marker != null) {
-            marker.remove();
-            marker = null;
+        pathPositions.clear();
+        setPath(null);
+
+        setStartPosition(Double.MIN_VALUE, Double.MIN_VALUE);
+        startDisplayed = false;
+
+        if (centered) {
+            Location l = m.getLastLocation();
+            if (l != null) {
+                moveTo(l.getLatitude(), l.getLongitude(), 18);
+            }
         }
     }
-
-    public void tryEnableSelfLocations(Context c) {
-        if (Build.VERSION.SDK_INT >= 23 && c.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            googleMap.setMyLocationEnabled(true);
-        }
-    }*/
 }

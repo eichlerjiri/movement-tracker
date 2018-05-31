@@ -7,18 +7,22 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import eichlerjiri.mapcomponent.MapComponent;
+import eichlerjiri.mapcomponent.utils.DoubleArrayList;
+import eichlerjiri.mapcomponent.utils.GeoBoundary;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.AndroidUtils;
+import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.utils.GeoUtils;
+import eichlerjiri.movementtracker.utils.StringUtils;
 
 public class MovementDetail extends Activity {
 
@@ -68,13 +72,16 @@ public class MovementDetail extends Activity {
     private void doCreate() throws Failure {
         TextView detailText = new TextView(this);
 
-        int padding = AndroidUtils.spToPix(this, 4.0f);
+        int padding = Math.round(AndroidUtils.spToPix(this, 4.0f));
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);
         detailView.setOrientation(LinearLayout.VERTICAL);
 
+        MapComponent map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+
         detailView.addView(detailText);
+        detailView.addView(map);
         setContentView(detailView);
 
         ActionBar actionBar = getActionBar();
@@ -92,7 +99,6 @@ public class MovementDetail extends Activity {
         }
 
         setTitle(recording.movementType);
-        //detailView.addView(mapView); // after availability check
 
         long from = recording.ts;
         long to = recording.tsEnd;
@@ -116,17 +122,7 @@ public class MovementDetail extends Activity {
 
         detailText.setText(text);
 
-      /*  mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(final GoogleMap googleMap) {
-                GeoUtils.waitForMapViewToBeReady(mapView, new Runnable() {
-                    @Override
-                    public void run() {
-                        drawLine(googleMap, locations);
-                    }
-                });
-            }
-        });*/
+        drawLine(map, locations);
     }
 
     private HistoryRow getHistoryItem() throws Failure {
@@ -140,21 +136,41 @@ public class MovementDetail extends Activity {
         return null;
     }
 
-  /*  private void drawLine(GoogleMap googleMap, ArrayList<LocationRow> locs) {
-        if (locs.isEmpty()) {
+    private void drawLine(final MapComponent map, ArrayList<LocationRow> locations) {
+        if (locations.isEmpty()) {
             return;
         }
 
-        googleMap.addPolyline(GeoUtils.createPolyline(locs));
-        googleMap.addMarker(GeoUtils.createMarker(locs.get(0), BitmapDescriptorFactory.HUE_GREEN));
-        googleMap.addMarker(GeoUtils.createMarker(locs.get(locs.size() - 1), BitmapDescriptorFactory.HUE_RED));
+        LocationRow start = locations.get(0);
+        LocationRow end = locations.get(locations.size() - 1);
 
-        GeoBoundary geoBoundary = new GeoBoundary();
-        for (LocationRow location : locs) {
+        map.setStartPosition(start.lat, start.lon);
+        map.setEndPosition(end.lat, end.lon);
+
+        DoubleArrayList positions = new DoubleArrayList();
+        for (LocationRow row : locations) {
+            positions.add(row.lat, row.lon);
+        }
+        map.setPath(positions);
+
+        final GeoBoundary geoBoundary = new GeoBoundary();
+        for (LocationRow location : locations) {
             geoBoundary.addPoint(location.lat, location.lon);
         }
-        GeoUtils.moveToRect(mapView, googleMap, geoBoundary);
-    }*/
+
+        map.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            private boolean done;
+
+            @Override
+            public void onGlobalLayout() {
+                if (!done) {
+                    done = true;
+                    map.moveToBoundary(geoBoundary, map.getWidth(), map.getHeight(), 18, 30);
+                }
+            }
+        });
+    }
 
     private void confirmDeleteRecording() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
