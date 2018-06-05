@@ -28,6 +28,7 @@ public class MovementDetail extends Activity {
 
     private Model m;
     private HistoryRow recording;
+    private MapComponent map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +46,8 @@ public class MovementDetail extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         m.unregisterMovementDetail(this);
+
+        map.close();
     }
 
     @Override
@@ -78,7 +81,7 @@ public class MovementDetail extends Activity {
         LinearLayout detailView = new LinearLayout(this);
         detailView.setOrientation(LinearLayout.VERTICAL);
 
-        MapComponent map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
 
         detailView.addView(detailText);
         detailView.addView(map);

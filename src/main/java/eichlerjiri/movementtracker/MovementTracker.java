@@ -78,6 +78,8 @@ public class MovementTracker extends Activity {
         if (serviceBound) {
             unbindService(serviceConnection);
         }
+
+        map.close();
     }
 
     @Override
