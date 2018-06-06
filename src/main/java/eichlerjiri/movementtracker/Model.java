@@ -23,6 +23,7 @@ public class Model {
 
     private Database database;
 
+    private Location lastKnownLocation;
     private Location lastLocation;
     private boolean receivingLocations;
     private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
@@ -86,6 +87,10 @@ public class Model {
         return lastLocation;
     }
 
+    public Location getLastKnownLocation() {
+        return lastKnownLocation;
+    }
+
     public String getActiveRecordingType() {
         return activeRecordingType;
     }
@@ -124,6 +129,14 @@ public class Model {
 
         for (MovementTracker movementTracker : movementTrackers) {
             movementTracker.lastLocationUpdated(recorded);
+        }
+    }
+
+    public void lastKnownLocationArrived(Location location) {
+        lastKnownLocation = location;
+
+        for (MovementTracker movementTracker : movementTrackers) {
+            movementTracker.lastKnownLocationUpdated();
         }
     }
 

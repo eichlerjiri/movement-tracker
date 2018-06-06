@@ -30,16 +30,37 @@ public class TrackerMap extends MapComponent {
         }
     }
 
-    private void doInit() throws Failure {
-        centered = true;
-
-        Location l = m.getLastLocation();
-        if (l != null) {
-            moveTo(l.getLatitude(), l.getLongitude(), 18);
+    @Override
+    public void centerMap() {
+        Location last = m.getLastLocation();
+        Location lastKnown = m.getLastKnownLocation();
+        double lat;
+        double lon;
+        float zoom;
+        if (last != null) {
+            lat = last.getLatitude();
+            lon = last.getLongitude();
+            zoom = 18;
+        } else if (lastKnown != null) {
+            lat = lastKnown.getLatitude();
+            lon = lastKnown.getLongitude();
+            zoom = 15;
         } else {
-            moveTo(50.083333, 14.416667, 4); // prague
+            lat = 50.083333; // prague
+            lon = 14.416667;
+            zoom = 4;
         }
 
+        if (!m.getActiveRecordingType().isEmpty()) {
+            GeoBoundary geoBoundary = new GeoBoundary(m.getActiveGeoBoundary());
+            geoBoundary.addPoint(lat, lon);
+            moveToBoundary(geoBoundary, getWidth(), getHeight(), zoom, 30);
+        } else {
+            moveTo(lat, lon, zoom, 0);
+        }
+    }
+
+    private void doInit() throws Failure {
         if (!m.getActiveRecordingType().isEmpty()) {
             ArrayList<LocationRow> locs = m.getDatabase().getLocations(m.getActiveRecording());
 
@@ -56,16 +77,13 @@ public class TrackerMap extends MapComponent {
         }
 
         getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-
             private boolean done;
 
             @Override
             public void onGlobalLayout() {
                 if (!done) {
                     done = true;
-                    if (m.getActiveLocations() != 0) {
-                        moveToBoundary(m.getActiveGeoBoundary(), getWidth(), getHeight(), 18, 30);
-                    }
+                    centerMap();
                 }
             }
         });
@@ -89,13 +107,13 @@ public class TrackerMap extends MapComponent {
         }
 
         if (centered) {
-            if (!m.getActiveRecordingType().isEmpty()) {
-                GeoBoundary geoBoundary = new GeoBoundary(m.getActiveGeoBoundary());
-                geoBoundary.addPoint(lat, lon);
-                moveToBoundary(geoBoundary, getWidth(), getHeight(), 18, 30);
-            } else {
-                moveTo(lat, lon, 18);
-            }
+            centerMap();
+        }
+    }
+
+    public void updateLastKnownLocation() {
+        if (centered) {
+            centerMap();
         }
     }
 
@@ -107,10 +125,7 @@ public class TrackerMap extends MapComponent {
         startDisplayed = false;
 
         if (centered) {
-            Location l = m.getLastLocation();
-            if (l != null) {
-                moveTo(l.getLatitude(), l.getLongitude(), 18);
-            }
+            centerMap();
         }
     }
 }

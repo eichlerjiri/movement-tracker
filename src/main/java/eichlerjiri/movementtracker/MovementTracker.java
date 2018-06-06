@@ -118,7 +118,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = Math.round(AndroidUtils.spToPix(this, 4.0f));
+        int padding = Math.round(4 * AndroidUtils.spSize(this));
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));
@@ -219,7 +219,7 @@ public class MovementTracker extends Activity {
                     " " + FormatUtils.formatCoord(l.getLongitude()) +
                     " " + FormatUtils.formatAccuracy(l.getAccuracy());
         } else {
-            text += "not available";
+            text += "no location";
         }
 
         if (!m.getActiveRecordingType().isEmpty()) {
@@ -286,6 +286,10 @@ public class MovementTracker extends Activity {
     public void lastLocationUpdated(boolean recorded) {
         updateText();
         map.updateLocation(recorded);
+    }
+
+    public void lastKnownLocationUpdated() {
+        map.updateLastKnownLocation();
     }
 
     public void recordingStarted() {

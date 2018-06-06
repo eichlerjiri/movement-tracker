@@ -29,6 +29,7 @@ public class MovementDetail extends Activity {
     private Model m;
     private HistoryRow recording;
     private MapComponent map;
+    private GeoBoundary geoBoundary;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +76,18 @@ public class MovementDetail extends Activity {
     private void doCreate() throws Failure {
         TextView detailText = new TextView(this);
 
-        int padding = Math.round(AndroidUtils.spToPix(this, 4.0f));
+        int padding = Math.round(4 * AndroidUtils.spSize(this));
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);
         detailView.setOrientation(LinearLayout.VERTICAL);
 
-        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString())) {
+            @Override
+            public void centerMap() {
+                doCenterMap();
+            }
+        };
 
         detailView.addView(detailText);
         detailView.addView(map);
@@ -156,7 +162,7 @@ public class MovementDetail extends Activity {
         }
         map.setPath(positions);
 
-        final GeoBoundary geoBoundary = new GeoBoundary();
+        geoBoundary = new GeoBoundary();
         for (LocationRow location : locations) {
             geoBoundary.addPoint(location.lat, location.lon);
         }
@@ -169,10 +175,14 @@ public class MovementDetail extends Activity {
             public void onGlobalLayout() {
                 if (!done) {
                     done = true;
-                    map.moveToBoundary(geoBoundary, map.getWidth(), map.getHeight(), 18, 30);
+                    doCenterMap();
                 }
             }
         });
+    }
+
+    private void doCenterMap() {
+        map.moveToBoundary(geoBoundary, map.getWidth(), map.getHeight(), 18, 30);
     }
 
     private void confirmDeleteRecording() {

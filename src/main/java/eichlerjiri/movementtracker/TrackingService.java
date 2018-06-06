@@ -89,7 +89,7 @@ public class TrackingService extends Service {
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         if (location != null) {
-            m.locationArrived(location);
+            m.lastKnownLocationArrived(location);
         }
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
