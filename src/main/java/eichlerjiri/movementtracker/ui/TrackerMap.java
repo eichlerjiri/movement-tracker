@@ -20,6 +20,8 @@ public class TrackerMap extends MapComponent {
     private boolean startDisplayed;
     private DoubleArrayList pathPositions = new DoubleArrayList();
 
+    public boolean donePositionInit;
+
     public TrackerMap(Context c, ArrayList<String> mapUrls) {
         super(c, mapUrls);
         m = Model.getInstance();
@@ -77,12 +79,10 @@ public class TrackerMap extends MapComponent {
         }
 
         getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            private boolean done;
-
             @Override
             public void onGlobalLayout() {
-                if (!done) {
-                    done = true;
+                if (!donePositionInit) {
+                    donePositionInit = true;
                     centerMap();
                 }
             }

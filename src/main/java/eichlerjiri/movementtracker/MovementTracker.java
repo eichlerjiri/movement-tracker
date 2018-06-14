@@ -35,6 +35,7 @@ public class MovementTracker extends Activity {
 
     private Model m;
 
+    private ActionBar actionBar;
     private ActionBar.Tab recordingTab;
     private ActionBar.Tab historyTab;
     private LinearLayout recordingView;
@@ -108,6 +109,29 @@ public class MovementTracker extends Activity {
         }
     }
 
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        actionBar.setSelectedNavigationItem(savedInstanceState.getInt("selectedTabIndex"));
+        if (historyList != null) {
+            historyList.onRestoreInstanceState(savedInstanceState.getParcelable("historyList"));
+        }
+        map.restoreInstanceState(savedInstanceState.getBundle("map"));
+        map.donePositionInit = !map.centered;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt("selectedTabIndex", actionBar.getSelectedNavigationIndex());
+        if (historyList != null) {
+            outState.putParcelable("historyList", historyList.onSaveInstanceState());
+        }
+        outState.putBundle("map", map.saveInstanceState());
+    }
+
     private void doCreate() throws Failure {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -146,7 +170,7 @@ public class MovementTracker extends Activity {
 
         setContentView(recordingView);
 
-        ActionBar actionBar = getActionBar();
+        actionBar = getActionBar();
         if (actionBar == null) {
             throw new Failure("Action bar not available");
         }
@@ -254,7 +278,10 @@ public class MovementTracker extends Activity {
             historyView.addView(historyList);
 
             reloadHistoryList();
+        } else {
+            historyList.setAdapter(historyList.getAdapter()); // solves random bug, when items are not clickable
         }
+
         return historyView;
     }
 
@@ -271,9 +298,7 @@ public class MovementTracker extends Activity {
                     FormatUtils.formatDateTime(item.ts);
         }
 
-        ListView listView = historyList;
-        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        historyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MovementTracker.this, MovementDetail.class);
@@ -281,6 +306,7 @@ public class MovementTracker extends Activity {
                 startActivity(intent);
             }
         });
+        historyList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
     }
 
     public void lastLocationUpdated(boolean recorded) {

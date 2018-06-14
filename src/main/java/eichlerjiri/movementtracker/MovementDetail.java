@@ -31,6 +31,8 @@ public class MovementDetail extends Activity {
     private MapComponent map;
     private GeoBoundary geoBoundary;
 
+    private boolean donePositionInit;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +73,21 @@ public class MovementDetail extends Activity {
             });
         }
         return true;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        map.restoreInstanceState(savedInstanceState.getBundle("map"));
+        donePositionInit = !map.centered;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putBundle("map", map.saveInstanceState());
     }
 
     private void doCreate() throws Failure {
@@ -168,13 +185,10 @@ public class MovementDetail extends Activity {
         }
 
         map.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-
-            private boolean done;
-
             @Override
             public void onGlobalLayout() {
-                if (!done) {
-                    done = true;
+                if (!donePositionInit) {
+                    donePositionInit = true;
                     doCenterMap();
                 }
             }
