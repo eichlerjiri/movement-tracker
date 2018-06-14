@@ -63,6 +63,10 @@ public class TrackerMap extends MapComponent {
     }
 
     private void doInit() throws Failure {
+        if (m.getLastLocation() != null) {
+            updateLocation(false);
+        }
+
         if (!m.getActiveRecordingType().isEmpty()) {
             ArrayList<LocationRow> locs = m.getDatabase().getLocations(m.getActiveRecording());
 
