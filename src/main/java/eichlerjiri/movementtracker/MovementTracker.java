@@ -166,6 +166,10 @@ public class MovementTracker extends Activity {
         recordingView.addView(buttonsLayout);
 
         map = new TrackerMap(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+        if (m.getLastLocation() != null) {
+            map.updateLocation(false);
+        }
+
         recordingView.addView(map);
 
         setContentView(recordingView);
