@@ -87,30 +87,35 @@ public class Database {
         delete(d, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 
-    public ArrayList<HistoryRow> getHistory(String orderBy) throws Failure {
+    private ArrayList<HistoryRow> prepareHistory(String selection, String[] selectionArgs, String orderBy)
+            throws Failure {
         ArrayList<HistoryRow> ret = new ArrayList<>();
 
         Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
-                "ts_end<>0", null, null, null, orderBy);
+                selection, selectionArgs, null, null, orderBy);
         while (c.moveToNext()) {
             ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
         }
         c.close();
 
         return ret;
+
+    }
+
+    public ArrayList<HistoryRow> getHistory() throws Failure {
+        return prepareHistory("ts_end<>0", null, "ts DESC,id");
+    }
+
+    public ArrayList<HistoryRow> getHistorySince(long ts) throws Failure {
+        return prepareHistory("ts_end<>0 AND ts>=?", new String[]{String.valueOf(ts)}, "ts,id");
     }
 
     public HistoryRow getHistoryItem(long id) throws Failure {
-        HistoryRow ret = null;
-
-        Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
-                "ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null, null, null);
-        if (c.moveToNext()) {
-            ret = new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4));
+        ArrayList<HistoryRow> rows = prepareHistory("ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null);
+        if (rows.isEmpty()) {
+            return null;
         }
-        c.close();
-
-        return ret;
+        return rows.get(0);
     }
 
     public ArrayList<LocationRow> getLocations(long idRecording) throws Failure {

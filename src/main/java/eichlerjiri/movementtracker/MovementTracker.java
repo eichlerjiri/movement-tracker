@@ -3,6 +3,7 @@ package eichlerjiri.movementtracker;
 import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -17,12 +18,15 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.db.HistoryRow;
@@ -227,7 +231,7 @@ public class MovementTracker extends Activity {
                 break;
             } else if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permissions[i])) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    Exporter.exportGPX(MovementTracker.this);
+                    showDateExportSelector();
                 }
                 break;
             }
@@ -304,7 +308,7 @@ public class MovementTracker extends Activity {
                         != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 } else {
-                    Exporter.exportGPX(MovementTracker.this);
+                    showDateExportSelector();
                 }
             }
         });
@@ -317,12 +321,27 @@ public class MovementTracker extends Activity {
         return exportButtonLayout;
     }
 
+    private void showDateExportSelector() {
+        GregorianCalendar cal = new GregorianCalendar();
+
+        DatePickerDialog dialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                GregorianCalendar c = new GregorianCalendar(year, month, dayOfMonth);
+                Exporter.exportGPX(MovementTracker.this, c.getTimeInMillis());
+            }
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+
+        dialog.setMessage("Export recordings since:");
+        dialog.show();
+    }
+
     public void reloadHistoryList() throws Failure {
         if (historyList == null) {
             return;
         }
 
-        final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory("ts DESC,id");
+        final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory();
         String[] items = new String[historyItems.size()];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.get(i);

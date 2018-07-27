@@ -22,7 +22,7 @@ import eichlerjiri.movementtracker.utils.FormatUtils;
 
 public class Exporter {
 
-    public static void exportGPX(final Context context) {
+    public static void exportGPX(final Context context, final long sinceTs) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setMessage("Please wait")
                 .setTitle("Exporting TCX");
@@ -35,14 +35,14 @@ public class Exporter {
             @Override
             public void run() {
                 try {
-                    threaded(context, alertDialog);
+                    threaded(context, alertDialog, sinceTs);
                 } catch (Failure ignored) {
                 }
             }
         }).start();
     }
 
-    private static void threaded(final Context context, final AlertDialog alertDialog) throws Failure {
+    private static void threaded(final Context context, final AlertDialog alertDialog, long sinceTs) throws Failure {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -56,8 +56,8 @@ public class Exporter {
 
         String res;
         try {
-            doExport(new File(docsDir, filename));
-            res = "Exported to " + dirLocs + "/" + filename;
+            int cnt = doExport(new File(docsDir, filename), sinceTs);
+            res = "Exported " + cnt + " recordings to " + dirLocs + "/" + filename;
         } catch (IOException e) {
             Log.e("Exporter", "Export failed", e);
             res = "Export failed: " + e.getMessage();
@@ -68,15 +68,15 @@ public class Exporter {
             @Override
             public void run() {
                 alertDialog.hide();
-                Toast.makeText(context, ress, Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, ress, Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private static void doExport(File docsDir) throws IOException, Failure {
+    private static int doExport(File docsDir, long sinceTs) throws IOException, Failure {
         FileWriter fw = new FileWriter(docsDir);
         try {
-            doWriteGPX(Model.getInstance().getDatabase(), fw);
+            return doWriteGPX(Model.getInstance().getDatabase(), sinceTs, fw);
         } finally {
             try {
                 fw.close();
@@ -86,7 +86,7 @@ public class Exporter {
         }
     }
 
-    private static void doWriteGPX(Database d, FileWriter fw) throws IOException, Failure {
+    private static int doWriteGPX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
         fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         fw.write("<TrainingCenterDatabase" +
                 " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +
@@ -95,7 +95,8 @@ public class Exporter {
                 " http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd\">\n");
         fw.write("<Activities>\n");
 
-        for (HistoryRow row : d.getHistory("ts,id")) {
+        int cnt = 0;
+        for (HistoryRow row : d.getHistorySince(sinceTs)) {
             String type = "";
             if (row.movementType.equals("walk")) {
                 type = "Walking";
@@ -122,9 +123,13 @@ public class Exporter {
             fw.write("</Track>\n");
             fw.write("</Lap>\n");
             fw.write("</Activity>\n");
+
+            cnt++;
         }
 
         fw.write("</Activities>\n");
         fw.write("</TrainingCenterDatabase>\n");
+
+        return cnt;
     }
 }
