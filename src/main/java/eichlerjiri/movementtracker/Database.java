@@ -87,11 +87,11 @@ public class Database {
         delete(d, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 
-    public ArrayList<HistoryRow> getHistory() throws Failure {
+    public ArrayList<HistoryRow> getHistory(String orderBy) throws Failure {
         ArrayList<HistoryRow> ret = new ArrayList<>();
 
         Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
-                "ts_end<>0", null, null, null, "ts DESC,id");
+                "ts_end<>0", null, null, null, orderBy);
         while (c.moveToNext()) {
             ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
         }
@@ -116,10 +116,10 @@ public class Database {
     public ArrayList<LocationRow> getLocations(long idRecording) throws Failure {
         ArrayList<LocationRow> ret = new ArrayList<>();
 
-        Cursor c = query(d, "location", new String[]{"lat", "lon"}, "id_recording=?",
+        Cursor c = query(d, "location", new String[]{"ts", "lat", "lon"}, "id_recording=?",
                 new String[]{String.valueOf(idRecording)}, null, null, "ts,id");
         while (c.moveToNext()) {
-            ret.add(new LocationRow(c.getDouble(0), c.getDouble(1)));
+            ret.add(new LocationRow(c.getLong(0), c.getDouble(1), c.getDouble(2)));
         }
         c.close();
 

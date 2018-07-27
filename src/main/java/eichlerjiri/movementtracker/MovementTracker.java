@@ -16,16 +16,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.db.HistoryRow;
+import eichlerjiri.movementtracker.ui.Exporter;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
-import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.FormatUtils;
 import eichlerjiri.movementtracker.utils.GeoUtils;
@@ -39,7 +42,7 @@ public class MovementTracker extends Activity {
     private ActionBar.Tab recordingTab;
     private ActionBar.Tab historyTab;
     private LinearLayout recordingView;
-    private LinearLayout historyView;
+    private RelativeLayout historyView;
 
     private TextView recordingText;
     private ListView historyList;
@@ -220,8 +223,12 @@ public class MovementTracker extends Activity {
                 if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
                     throw new Failure("Permission to location service rejected.");
                 }
-
                 initTrackingService();
+                break;
+            } else if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permissions[i])) {
+                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    Exporter.exportGPX(MovementTracker.this);
+                }
                 break;
             }
         }
@@ -270,12 +277,13 @@ public class MovementTracker extends Activity {
 
     private View prepareHistoryView() throws Failure {
         if (historyView == null) {
-            historyView = new LinearLayout(this);
+            historyView = new RelativeLayout(this);
 
             historyList = new ListView(this);
             historyList.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
             historyView.addView(historyList);
+            historyView.addView(prepareExportButton());
 
             reloadHistoryList();
         } else {
@@ -285,12 +293,36 @@ public class MovementTracker extends Activity {
         return historyView;
     }
 
+    private LinearLayout prepareExportButton() {
+        LinearLayout exportButtonLayout = new LinearLayout(this);
+        Button exportButton = new Button(this);
+        exportButton.setText("Export TCX");
+        exportButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+                } else {
+                    Exporter.exportGPX(MovementTracker.this);
+                }
+            }
+        });
+        exportButtonLayout.addView(exportButton);
+C
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(exportButton.getLayoutParams());
+        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        exportButtonLayout.setLayoutParams(params);
+        return exportButtonLayout;
+    }
+
     public void reloadHistoryList() throws Failure {
         if (historyList == null) {
             return;
         }
 
-        final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory();
+        final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory("ts DESC,id");
         String[] items = new String[historyItems.size()];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.get(i);

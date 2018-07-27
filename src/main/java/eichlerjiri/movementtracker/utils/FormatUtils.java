@@ -13,6 +13,14 @@ public class FormatUtils {
         return format(millis, "d.M.yyyy HH:mm");
     }
 
+    public static String formatDateTimeISO(long millis) {
+        return format(millis, "yyyy-MM-dd HH:mm:ss");
+    }
+
+    public static String formatDateTimeTZ(long millis) {
+        return format(millis, "yyyy-MM-dd'T'HH:mm:ss'Z'");
+    }
+
     public static String formatTime(long millis) {
         return format(millis, "HH:mm");
     }
