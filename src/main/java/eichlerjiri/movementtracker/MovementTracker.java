@@ -309,7 +309,7 @@ public class MovementTracker extends Activity {
             }
         });
         exportButtonLayout.addView(exportButton);
-C
+
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(exportButton.getLayoutParams());
         params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
