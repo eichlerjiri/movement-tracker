@@ -22,7 +22,7 @@ import eichlerjiri.movementtracker.utils.FormatUtils;
 
 public class Exporter {
 
-    public static void exportGPX(final Context context, final long sinceTs) {
+    public static void exportTCX(final Context context, final long sinceTs) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setMessage("Please wait")
                 .setTitle("Exporting TCX");
@@ -76,7 +76,7 @@ public class Exporter {
     private static int doExport(File docsDir, long sinceTs) throws IOException, Failure {
         FileWriter fw = new FileWriter(docsDir);
         try {
-            return doWriteGPX(Model.getInstance().getDatabase(), sinceTs, fw);
+            return doWriteTCX(Model.getInstance().getDatabase(), sinceTs, fw);
         } finally {
             try {
                 fw.close();
@@ -86,7 +86,7 @@ public class Exporter {
         }
     }
 
-    private static int doWriteGPX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
+    private static int doWriteTCX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
         fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         fw.write("<TrainingCenterDatabase" +
                 " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +

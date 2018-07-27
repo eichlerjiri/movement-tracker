@@ -328,7 +328,7 @@ public class MovementTracker extends Activity {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                 GregorianCalendar c = new GregorianCalendar(year, month, dayOfMonth);
-                Exporter.exportGPX(MovementTracker.this, c.getTimeInMillis());
+                Exporter.exportTCX(MovementTracker.this, c.getTimeInMillis());
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
 
