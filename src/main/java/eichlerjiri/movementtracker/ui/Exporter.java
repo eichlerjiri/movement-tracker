@@ -22,10 +22,10 @@ import eichlerjiri.movementtracker.utils.FormatUtils;
 
 public class Exporter {
 
-    public static void exportTCX(final Context context, final long sinceTs) {
+    public static void exportTracks(final Context context, final long sinceTs, final String format) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setMessage("Please wait")
-                .setTitle("Exporting TCX");
+                .setTitle("Exporting " + format.toUpperCase());
 
         final AlertDialog alertDialog = builder.create();
         alertDialog.setCancelable(false);
@@ -35,14 +35,15 @@ public class Exporter {
             @Override
             public void run() {
                 try {
-                    threaded(context, alertDialog, sinceTs);
+                    threaded(context, alertDialog, sinceTs, format);
                 } catch (Failure ignored) {
                 }
             }
         }).start();
     }
 
-    private static void threaded(final Context context, final AlertDialog alertDialog, long sinceTs) throws Failure {
+    private static void threaded(final Context context, final AlertDialog alertDialog, long sinceTs, String format)
+            throws Failure {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -52,11 +53,11 @@ public class Exporter {
         File docsDir = Environment.getExternalStoragePublicDirectory(dirLocs);
         docsDir.mkdirs();
 
-        String filename = "MovementTracker " + FormatUtils.formatDateTimeISO(System.currentTimeMillis()) + ".tcx";
+        String filename = "MovementTracker " + FormatUtils.formatDateTimeISO(System.currentTimeMillis()) + "." + format;
 
         String res;
         try {
-            int cnt = doExport(new File(docsDir, filename), sinceTs);
+            int cnt = doExport(new File(docsDir, filename), sinceTs, format);
             res = "Exported " + cnt + " recordings to " + dirLocs + "/" + filename;
         } catch (IOException e) {
             Log.e("Exporter", "Export failed", e);
@@ -73,10 +74,14 @@ public class Exporter {
         });
     }
 
-    private static int doExport(File docsDir, long sinceTs) throws IOException, Failure {
+    private static int doExport(File docsDir, long sinceTs, String format) throws IOException, Failure {
         FileWriter fw = new FileWriter(docsDir);
         try {
-            return doWriteTCX(Model.getInstance().getDatabase(), sinceTs, fw);
+            if (format.equals("tcx")) {
+                return doWriteTCX(Model.getInstance().getDatabase(), sinceTs, fw);
+            } else {
+                return doWriteGPX(Model.getInstance().getDatabase(), sinceTs, fw);
+            }
         } finally {
             try {
                 fw.close();
@@ -129,6 +134,46 @@ public class Exporter {
 
         fw.write("</Activities>\n");
         fw.write("</TrainingCenterDatabase>\n");
+
+        return cnt;
+    }
+
+    private static int doWriteGPX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
+        fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        fw.write("<gpx version=\"1.1\"" +
+                " xmlns=\"http://www.topografix.com/GPX/1/1\"" +
+                " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
+                " xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1" +
+                " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
+
+        int cnt = 0;
+        for (HistoryRow row : d.getHistorySince(sinceTs)) {
+            String type = "";
+            if (row.movementType.equals("walk")) {
+                type = "Walking";
+            } else if (row.movementType.equals("bike")) {
+                type = "Biking";
+            } else if (row.movementType.equals("run")) {
+                type = "Running";
+            }
+
+            fw.write("<trk>\n");
+            fw.write("<type>" + type + "</type>\n");
+            fw.write("<trkseg>\n");
+
+            for (LocationRow loc : d.getLocations(row.id)) {
+                fw.write("<trkpt lat=\"" + loc.lat + "\" lon=\"" + loc.lon + "\">\n");
+                fw.write("<time>" + FormatUtils.formatDateTimeTZ(loc.ts) + "</time>\n");
+                fw.write("</trkpt>\n");
+            }
+
+            fw.write("</trkseg>\n");
+            fw.write("</trk>\n");
+
+            cnt++;
+        }
+
+        fw.write("</gpx>\n");
 
         return cnt;
     }

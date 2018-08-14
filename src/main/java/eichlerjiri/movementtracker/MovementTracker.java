@@ -66,6 +66,8 @@ public class MovementTracker extends Activity {
     };
     private boolean serviceBound;
 
+    private String formatClicked;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -231,7 +233,7 @@ public class MovementTracker extends Activity {
                 break;
             } else if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permissions[i])) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    showDateExportSelector();
+                    showDateExportSelector(formatClicked);
                 }
                 break;
             }
@@ -287,7 +289,19 @@ public class MovementTracker extends Activity {
             historyList.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
             historyView.addView(historyList);
-            historyView.addView(prepareExportButton());
+
+            LinearLayout exportButtonLayout = new LinearLayout(this);
+            exportButtonLayout.setOrientation(LinearLayout.VERTICAL);
+            exportButtonLayout.addView(prepareExportButton("tcx"));
+            exportButtonLayout.addView(prepareExportButton("gpx"));
+
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            exportButtonLayout.setLayoutParams(params);
+
+            historyView.addView(exportButtonLayout);
 
             reloadHistoryList();
         } else {
@@ -297,38 +311,32 @@ public class MovementTracker extends Activity {
         return historyView;
     }
 
-    private LinearLayout prepareExportButton() {
-        LinearLayout exportButtonLayout = new LinearLayout(this);
+    private Button prepareExportButton(final String format) {
         Button exportButton = new Button(this);
-        exportButton.setText("Export TCX");
+        exportButton.setText("Export " + format.toUpperCase());
         exportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         != PackageManager.PERMISSION_GRANTED) {
+                    formatClicked = format;
                     requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 } else {
-                    showDateExportSelector();
+                    showDateExportSelector(format);
                 }
             }
         });
-        exportButtonLayout.addView(exportButton);
-
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(exportButton.getLayoutParams());
-        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        exportButtonLayout.setLayoutParams(params);
-        return exportButtonLayout;
+        return exportButton;
     }
 
-    private void showDateExportSelector() {
+    private void showDateExportSelector(final String format) {
         GregorianCalendar cal = new GregorianCalendar();
 
         DatePickerDialog dialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                 GregorianCalendar c = new GregorianCalendar(year, month, dayOfMonth);
-                Exporter.exportTCX(MovementTracker.this, c.getTimeInMillis());
+                Exporter.exportTracks(MovementTracker.this, c.getTimeInMillis(), format);
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
 
