@@ -18,7 +18,8 @@ import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.movementtracker.utils.FormatUtils;
+
+import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Exporter {
 
@@ -53,7 +54,7 @@ public class Exporter {
         File docsDir = Environment.getExternalStoragePublicDirectory(dirLocs);
         docsDir.mkdirs();
 
-        String filename = "MovementTracker " + FormatUtils.formatDateTimeISO(System.currentTimeMillis()) + "." + format;
+        String filename = "MovementTracker " + formatDateTimeISO(System.currentTimeMillis()) + "." + format;
 
         String res;
         try {
@@ -117,7 +118,7 @@ public class Exporter {
 
             for (LocationRow loc : d.getLocations(row.id)) {
                 fw.write("<Trackpoint>\n");
-                fw.write("<Time>" + FormatUtils.formatDateTimeTZ(loc.ts) + "</Time>\n");
+                fw.write("<Time>" + formatDateTimeTZ(loc.ts) + "</Time>\n");
                 fw.write("<Position>\n");
                 fw.write("<LatitudeDegrees>" + loc.lat + "</LatitudeDegrees>\n");
                 fw.write("<LongitudeDegrees>" + loc.lon + "</LongitudeDegrees>\n");
@@ -163,7 +164,7 @@ public class Exporter {
 
             for (LocationRow loc : d.getLocations(row.id)) {
                 fw.write("<trkpt lat=\"" + loc.lat + "\" lon=\"" + loc.lon + "\">\n");
-                fw.write("<time>" + FormatUtils.formatDateTimeTZ(loc.ts) + "</time>\n");
+                fw.write("<time>" + formatDateTimeTZ(loc.ts) + "</time>\n");
                 fw.write("</trkpt>\n");
             }
 

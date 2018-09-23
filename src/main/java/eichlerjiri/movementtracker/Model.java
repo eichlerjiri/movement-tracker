@@ -6,8 +6,9 @@ import android.location.Location;
 import java.util.ArrayList;
 
 import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.mapcomponent.utils.GeoBoundary;
-import eichlerjiri.movementtracker.utils.GeoUtils;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
+
+import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Model {
 
@@ -150,7 +151,7 @@ public class Model {
             return true;
         }
 
-        double distance = GeoUtils.distance(lastRecordedLocation.getLatitude(), lastRecordedLocation.getLongitude(),
+        double distance = distance(lastRecordedLocation.getLatitude(), lastRecordedLocation.getLongitude(),
                 location.getLatitude(), location.getLongitude());
 
         if (distance >= lastRecordedLocation.getAccuracy() + location.getAccuracy() || (last && distance > 0)) {
@@ -170,7 +171,7 @@ public class Model {
 
         activeTsTo = now;
         activeLocations++;
-        activeGeoBoundary.addPoint(location.getLatitude(), location.getLongitude());
+        activeGeoBoundary.addPoint(lonToMercatorX(location.getLongitude()), latToMercatorY(location.getLatitude()));
         lastRecordedLocation = location;
     }
 

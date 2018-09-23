@@ -15,14 +15,13 @@ import java.util.ArrayList;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleArrayList;
-import eichlerjiri.mapcomponent.utils.GeoBoundary;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.movementtracker.utils.FormatUtils;
-import eichlerjiri.movementtracker.utils.GeoUtils;
-import eichlerjiri.movementtracker.utils.StringUtils;
+
+import static eichlerjiri.mapcomponent.utils.Common.*;
+import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class MovementDetail extends Activity {
 
@@ -93,13 +92,13 @@ public class MovementDetail extends Activity {
     private void doCreate() throws Failure {
         TextView detailText = new TextView(this);
 
-        int padding = Math.round(4 * AndroidUtils.spSize(this));
+        int padding = Math.round(4 * spSize(this));
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);
         detailView.setOrientation(LinearLayout.VERTICAL);
 
-        map = new MapComponent(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString())) {
+        map = new MapComponent(this, splitNonEmpty(" ", getText(R.string.map_urls).toString())) {
             @Override
             public void centerMap() {
                 doCenterMap();
@@ -131,24 +130,24 @@ public class MovementDetail extends Activity {
         long duration = to - from;
         double distance = recording.distance;
 
-        boolean sameDay = FormatUtils.isSameDay(from, to);
+        boolean sameDay = isSameDay(from, to);
 
         final ArrayList<LocationRow> locations = m.getDatabase().getLocations(recording.id);
 
-        String text = "from " + FormatUtils.formatDateTime(from) +
-                " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
+        String text = "from " + formatDateTime(from) +
+                " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
                 "locations: " + locations.size() + "\n" +
-                "duration: " + FormatUtils.formatDuration(duration) + "\n" +
-                "distance: " + FormatUtils.formatDistance(distance);
+                "duration: " + formatDuration(duration) + "\n" +
+                "distance: " + formatDistance(distance);
 
-        double avgSpeed = GeoUtils.avgSpeed(distance, duration);
+        double avgSpeed = avgSpeed(distance, duration);
         if (avgSpeed != 0.0) {
-            text += "\navg. speed: " + FormatUtils.formatSpeed(avgSpeed);
+            text += "\navg. speed: " + formatSpeed(avgSpeed);
         }
 
         detailText.setText(text);
 
-        drawLine(map, locations);
+        drawLine(locations);
     }
 
     private HistoryRow getHistoryItem() throws Failure {
@@ -162,27 +161,29 @@ public class MovementDetail extends Activity {
         return null;
     }
 
-    private void drawLine(final MapComponent map, ArrayList<LocationRow> locations) {
+    private void drawLine(ArrayList<LocationRow> locations) {
         if (locations.isEmpty()) {
             return;
         }
 
         LocationRow start = locations.get(0);
-        LocationRow end = locations.get(locations.size() - 1);
+        map.setStartPosition(lonToMercatorX(start.lon), latToMercatorY(start.lat));
 
-        map.setStartPosition(start.lat, start.lon);
-        map.setEndPosition(end.lat, end.lon);
+        LocationRow end = locations.get(locations.size() - 1);
+        map.setEndPosition(lonToMercatorX(end.lon), latToMercatorY(end.lat));
 
         DoubleArrayList positions = new DoubleArrayList();
-        for (LocationRow row : locations) {
-            positions.add(row.lat, row.lon);
-        }
-        map.setPath(positions);
-
         geoBoundary = new GeoBoundary();
-        for (LocationRow location : locations) {
-            geoBoundary.addPoint(location.lat, location.lon);
+        for (LocationRow row : locations) {
+            double x = lonToMercatorX(row.lon);
+            double y = latToMercatorY(row.lat);
+
+            positions.add(x, y);
+            geoBoundary.addPoint(x, y);
         }
+        map.setPath(positions.data, 0, positions.size);
+
+        map.commit();
 
         map.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -196,7 +197,8 @@ public class MovementDetail extends Activity {
     }
 
     private void doCenterMap() {
-        map.moveToBoundary(geoBoundary, map.getWidth(), map.getHeight(), 18, 30);
+        map.moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, 18, 30);
+        map.commit();
     }
 
     private void confirmDeleteRecording() {

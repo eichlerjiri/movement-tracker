@@ -28,15 +28,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import eichlerjiri.mapcomponent.utils.AndroidUtils;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.Exporter;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
 import eichlerjiri.movementtracker.utils.Failure;
-import eichlerjiri.movementtracker.utils.FormatUtils;
-import eichlerjiri.movementtracker.utils.GeoUtils;
-import eichlerjiri.movementtracker.utils.StringUtils;
+
+import static eichlerjiri.mapcomponent.utils.Common.*;
+import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class MovementTracker extends Activity {
 
@@ -151,7 +150,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = Math.round(4 * AndroidUtils.spSize(this));
+        int padding = Math.round(4 * spSize(this));
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));
@@ -168,13 +167,13 @@ public class MovementTracker extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         for (MovementTypeButton button : buttons) {
-            button.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+            button.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
             buttonsLayout.addView(button);
         }
 
         recordingView.addView(buttonsLayout);
 
-        map = new TrackerMap(this, StringUtils.splitNonEmpty(" ", getText(R.string.map_urls).toString()));
+        map = new TrackerMap(this, splitNonEmpty(" ", getText(R.string.map_urls).toString()));
         recordingView.addView(map);
 
         setContentView(recordingView);
@@ -252,9 +251,9 @@ public class MovementTracker extends Activity {
 
         Location l = m.getLastLocation();
         if (l != null) {
-            text += FormatUtils.formatCoord(l.getLatitude()) +
-                    " " + FormatUtils.formatCoord(l.getLongitude()) +
-                    " " + FormatUtils.formatAccuracy(l.getAccuracy());
+            text += formatCoord(l.getLatitude()) +
+                    " " + formatCoord(l.getLongitude()) +
+                    " " + formatAccuracy(l.getAccuracy());
         } else {
             text += "no location";
         }
@@ -264,17 +263,17 @@ public class MovementTracker extends Activity {
             long to = m.getActiveTsTo();
             long duration = to - from;
 
-            boolean sameDay = FormatUtils.isSameDay(from, to);
+            boolean sameDay = isSameDay(from, to);
 
-            text += "\nfrom " + FormatUtils.formatDateTime(from) +
-                    " to " + (sameDay ? FormatUtils.formatTime(to) : FormatUtils.formatDateTime(to)) + "\n" +
+            text += "\nfrom " + formatDateTime(from) +
+                    " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
                     "locations: " + m.getActiveLocations() + "\n" +
-                    "duration: " + FormatUtils.formatDuration(duration) + "\n" +
-                    "distance: " + FormatUtils.formatDistance(m.getActiveDistance());
+                    "duration: " + formatDuration(duration) + "\n" +
+                    "distance: " + formatDistance(m.getActiveDistance());
 
-            double avgSpeed = GeoUtils.avgSpeed(m.getActiveDistance(), duration);
+            double avgSpeed = avgSpeed(m.getActiveDistance(), duration);
             if (avgSpeed != 0.0) {
-                text += "\navg. speed: " + FormatUtils.formatSpeed(avgSpeed);
+                text += "\navg. speed: " + formatSpeed(avgSpeed);
             }
         }
 
@@ -287,7 +286,7 @@ public class MovementTracker extends Activity {
 
             historyList = new ListView(this);
             historyList.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             historyView.addView(historyList);
 
             LinearLayout exportButtonLayout = new LinearLayout(this);
@@ -296,7 +295,7 @@ public class MovementTracker extends Activity {
             exportButtonLayout.addView(prepareExportButton("gpx"));
 
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
             params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             exportButtonLayout.setLayoutParams(params);
@@ -353,8 +352,7 @@ public class MovementTracker extends Activity {
         String[] items = new String[historyItems.size()];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.get(i);
-            items[i] = FormatUtils.formatDistance(item.distance) + " " + item.movementType + " " +
-                    FormatUtils.formatDateTime(item.ts);
+            items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTime(item.ts);
         }
 
         historyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

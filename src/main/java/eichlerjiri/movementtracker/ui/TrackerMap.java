@@ -8,10 +8,12 @@ import java.util.ArrayList;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleArrayList;
-import eichlerjiri.mapcomponent.utils.GeoBoundary;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.Failure;
+
+import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class TrackerMap extends MapComponent {
 
@@ -55,11 +57,14 @@ public class TrackerMap extends MapComponent {
 
         if (!m.getActiveRecordingType().isEmpty()) {
             GeoBoundary geoBoundary = new GeoBoundary(m.getActiveGeoBoundary());
-            geoBoundary.addPoint(lat, lon);
-            moveToBoundary(geoBoundary, getWidth(), getHeight(), zoom, 30);
+            geoBoundary.addPoint(lonToMercatorX(lon), latToMercatorY(lat));
+            moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, zoom, 30);
         } else {
-            moveTo(lat, lon, zoom, 0);
+            setPosition(lonToMercatorX(lon), latToMercatorY(lat));
+            setZoom(zoom);
+            setAzimuth(0);
         }
+        commit();
     }
 
     private void doInit() throws Failure {
@@ -71,15 +76,17 @@ public class TrackerMap extends MapComponent {
             ArrayList<LocationRow> locs = m.getDatabase().getLocations(m.getActiveRecording());
 
             for (LocationRow row : locs) {
-                pathPositions.add(row.lat, row.lon);
+                pathPositions.add(lonToMercatorX(row.lon), latToMercatorY(row.lat));
             }
-            setPath(pathPositions);
+            setPath(pathPositions.data, 0, pathPositions.size);
 
             if (!locs.isEmpty()) {
                 LocationRow first = locs.get(0);
-                setStartPosition(first.lat, first.lon);
+                setStartPosition(lonToMercatorX(first.lon), latToMercatorY(first.lat));
                 startDisplayed = true;
             }
+
+            commit();
         }
 
         getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -98,17 +105,24 @@ public class TrackerMap extends MapComponent {
         double lat = l.getLatitude();
         double lon = l.getLongitude();
 
-        setCurrentPosition(l);
+        if (l == null) {
+            setCurrentPosition(Double.MIN_VALUE, Double.MIN_VALUE, Float.MIN_VALUE);
+        } else {
+            float bearing = l.hasBearing() ? l.getBearing() : Float.MIN_VALUE;
+            setCurrentPosition(lonToMercatorX(l.getLongitude()), latToMercatorY(l.getLatitude()), bearing);
+        }
 
         if (recorded) {
             if (!startDisplayed) {
-                setStartPosition(lat, lon);
+                setStartPosition(lonToMercatorX(lon), latToMercatorY(lat));
                 startDisplayed = true;
             }
 
-            pathPositions.add(lat, lon);
-            setPath(pathPositions);
+            pathPositions.add(lonToMercatorX(lon), latToMercatorY(lat));
+            setPath(pathPositions.data, 0, pathPositions.size);
         }
+
+        commit();
 
         if (centered) {
             centerMap();
@@ -122,11 +136,13 @@ public class TrackerMap extends MapComponent {
     }
 
     public void recordingStopped() {
-        pathPositions.clear();
-        setPath(null);
+        pathPositions = new DoubleArrayList();
+        setPath(null, 0, 0);
 
         setStartPosition(Double.MIN_VALUE, Double.MIN_VALUE);
         startDisplayed = false;
+
+        commit();
 
         if (centered) {
             centerMap();
