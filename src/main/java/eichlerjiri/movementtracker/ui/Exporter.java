@@ -102,7 +102,6 @@ public class Exporter {
         w.write("<Activities>\n");
 
         SimpleDateFormat utcFormatter = utcFormatter();
-        Date date = new Date(0);
 
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
@@ -122,11 +121,9 @@ public class Exporter {
             w.write("<Track>\n");
 
             for (LocationRow loc : d.getLocations(row.id)) {
-                date.setTime(loc.ts);
-
                 w.write("<Trackpoint>\n");
                 w.write("<Time>");
-                w.write(utcFormatter.format(date));
+                w.write(utcFormatter.format(new Date(loc.ts)));
                 w.write("</Time>\n");
                 w.write("<Position>\n");
                 w.write("<LatitudeDegrees>");
@@ -161,7 +158,6 @@ public class Exporter {
                 " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
 
         SimpleDateFormat utcFormatter = utcFormatter();
-        Date date = new Date(0);
 
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
@@ -181,15 +177,13 @@ public class Exporter {
             w.write("<trkseg>\n");
 
             for (LocationRow loc : d.getLocations(row.id)) {
-                date.setTime(loc.ts);
-
                 w.write("<trkpt lat=\"");
                 w.write(Double.toString(loc.lat));
                 w.write("\" lon=\"");
                 w.write(Double.toString(loc.lon));
                 w.write("\">\n");
                 w.write("<time>");
-                w.write(utcFormatter.format(date));
+                w.write(utcFormatter.format(new Date(loc.ts)));
                 w.write("</time>\n");
                 w.write("</trkpt>\n");
             }

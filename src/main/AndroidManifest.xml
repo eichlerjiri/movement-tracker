@@ -16,6 +16,7 @@
             </intent-filter>
         </activity>
         <activity android:name="eichlerjiri.movementtracker.MovementDetail" />
+        <activity android:name="eichlerjiri.movementtracker.ErrorActivity" />
 
         <service android:name="eichlerjiri.movementtracker.TrackingService" />
     </application>

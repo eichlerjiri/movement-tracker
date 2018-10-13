@@ -1,7 +1,9 @@
 package eichlerjiri.movementtracker;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -20,6 +22,7 @@ public class Model {
         return instance;
     }
 
+    public final Context appContext;
     public final Database database;
 
     private TrackingService trackingService;
@@ -42,7 +45,23 @@ public class Model {
     private Location lastRecordedLocation;
     private int notificationCounter;
 
-    public Model(Context c) {
+    private Model(Context c) {
+        appContext = c.getApplicationContext();
+
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, final Throwable e) {
+                Log.e("Model", e.getMessage(), e);
+
+                Intent intent = new Intent(appContext, ErrorActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.putExtra("msg", e.getMessage());
+                appContext.startActivity(intent);
+
+                System.exit(1);
+            }
+        });
+
         database = new Database(c);
     }
 
