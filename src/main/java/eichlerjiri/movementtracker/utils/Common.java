@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.TimeZone;
 
 public class Common {
 
@@ -73,22 +72,12 @@ public class Common {
         return format(millis, "yyyy-MM-dd HH:mm:ss");
     }
 
-    public static String formatDateTimeTZ(long millis) {
-        return formatUTC(millis, "yyyy-MM-dd'T'HH:mm:ss'Z'");
-    }
-
     public static String formatTime(long millis) {
         return format(millis, "HH:mm");
     }
 
     public static String format(long millis, String template) {
         return new SimpleDateFormat(template, Locale.US).format(new Date(millis));
-    }
-
-    public static String formatUTC(long millis, String template) {
-        SimpleDateFormat formatter = new SimpleDateFormat(template, Locale.US);
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return formatter.format(new Date(millis));
     }
 
     public static boolean isSameDay(long millis1, long millis2) {

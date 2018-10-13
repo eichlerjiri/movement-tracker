@@ -15,8 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import eichlerjiri.movementtracker.utils.Failure;
-
 public class TrackingService extends Service {
 
     private Model m;
@@ -26,38 +24,18 @@ public class TrackingService extends Service {
 
     @Override
     public void onCreate() {
-        m = Model.getInstance();
+        m = Model.getInstance(this);
         m.registerTrackingService(this);
 
-        try {
-            doCreate();
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        m.unregisterTrackingService();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return new Binder();
-    }
-
-    private void doCreate() throws Failure {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
-            throw new Failure("Location service not available.");
+            throw new Error("Location service not available.");
         }
 
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                try {
-                    m.locationArrived(location);
-                } catch (Failure ignored) {
-                }
+                m.locationArrived(location);
             }
 
             @Override
@@ -73,18 +51,28 @@ public class TrackingService extends Service {
             }
         };
 
-        if (m.isReceivingLocations()) {
+        if (m.receivingLocations) {
             startReceiving();
         }
-        if (!m.getActiveRecordingType().isEmpty()) {
+        if (!m.activeRecordingType.isEmpty()) {
             startRecording();
         }
     }
 
-    public void startReceiving() throws Failure {
+    @Override
+    public void onDestroy() {
+        m.unregisterTrackingService();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new Binder();
+    }
+
+    public void startReceiving() {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            throw new Failure("Missing permissions for location service.");
+            throw new Error("Missing permissions for location service.");
         }
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);

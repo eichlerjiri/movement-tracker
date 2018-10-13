@@ -32,7 +32,6 @@ import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.Exporter;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
-import eichlerjiri.movementtracker.utils.Failure;
 
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
@@ -70,77 +69,9 @@ public class MovementTracker extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m = Model.getInstance();
+        m = Model.getInstance(this);
         m.registerMovementTracker(this);
 
-        try {
-            doCreate();
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        m.unregisterMovementTracker(this);
-
-        if (serviceBound) {
-            unbindService(serviceConnection);
-        }
-
-        map.close();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        try {
-            m.startedMovementTracker(this);
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        try {
-            m.stoppedMovementTracker(this);
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        try {
-            handlePermissionsResult(permissions, grantResults);
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-
-        actionBar.setSelectedNavigationItem(savedInstanceState.getInt("selectedTabIndex"));
-        if (historyList != null) {
-            historyList.onRestoreInstanceState(savedInstanceState.getParcelable("historyList"));
-        }
-        map.restoreInstanceState(savedInstanceState.getBundle("map"));
-        map.donePositionInit = !map.centered;
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putInt("selectedTabIndex", actionBar.getSelectedNavigationIndex());
-        if (historyList != null) {
-            outState.putParcelable("historyList", historyList.onSaveInstanceState());
-        }
-        outState.putBundle("map", map.saveInstanceState());
-    }
-
-    private void doCreate() throws Failure {
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
@@ -180,7 +111,7 @@ public class MovementTracker extends Activity {
 
         actionBar = getActionBar();
         if (actionBar == null) {
-            throw new Failure("Action bar not available");
+            throw new Error("Action bar not available");
         }
 
         actionBar.setDisplayShowTitleEnabled(false);
@@ -193,10 +124,7 @@ public class MovementTracker extends Activity {
                 if (tab == recordingTab) {
                     setContentView(recordingView);
                 } else if (tab == historyTab) {
-                    try {
-                        setContentView(prepareHistoryView());
-                    } catch (Failure ignored) {
-                    }
+                    setContentView(prepareHistoryView());
                 }
             }
 
@@ -220,13 +148,39 @@ public class MovementTracker extends Activity {
         actionBar.addTab(historyTab);
 
         updateText();
+
     }
 
-    private void handlePermissionsResult(String[] permissions, int[] grantResults) throws Failure {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        m.unregisterMovementTracker(this);
+
+        if (serviceBound) {
+            unbindService(serviceConnection);
+        }
+
+        map.close();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        m.startedMovementTracker(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        m.stoppedMovementTracker(this);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         for (int i = 0; i < permissions.length; i++) {
             if (Manifest.permission.ACCESS_FINE_LOCATION.equals(permissions[i])) {
                 if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                    throw new Failure("Permission to location service rejected.");
+                    throw new Error("Permission to location service rejected.");
                 }
                 initTrackingService();
                 break;
@@ -239,6 +193,29 @@ public class MovementTracker extends Activity {
         }
     }
 
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        actionBar.setSelectedNavigationItem(savedInstanceState.getInt("selectedTabIndex"));
+        if (historyList != null) {
+            historyList.onRestoreInstanceState(savedInstanceState.getParcelable("historyList"));
+        }
+        map.restoreInstanceState(savedInstanceState.getBundle("map"));
+        map.donePositionInit = !map.centered;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt("selectedTabIndex", actionBar.getSelectedNavigationIndex());
+        if (historyList != null) {
+            outState.putParcelable("historyList", historyList.onSaveInstanceState());
+        }
+        outState.putBundle("map", map.saveInstanceState());
+    }
+
     private void initTrackingService() {
         Intent intent = new Intent(this, TrackingService.class);
         startService(intent);
@@ -249,7 +226,7 @@ public class MovementTracker extends Activity {
     private void updateText() {
         String text = "GPS: ";
 
-        Location l = m.getLastLocation();
+        Location l = m.lastLocation;
         if (l != null) {
             text += formatCoord(l.getLatitude()) +
                     " " + formatCoord(l.getLongitude()) +
@@ -258,20 +235,20 @@ public class MovementTracker extends Activity {
             text += "no location";
         }
 
-        if (!m.getActiveRecordingType().isEmpty()) {
-            long from = m.getActiveTsFrom();
-            long to = m.getActiveTsTo();
+        if (!m.activeRecordingType.isEmpty()) {
+            long from = m.activeTsFrom;
+            long to = m.activeTsTo;
             long duration = to - from;
 
             boolean sameDay = isSameDay(from, to);
 
             text += "\nfrom " + formatDateTime(from) +
                     " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
-                    "locations: " + m.getActiveLocations() + "\n" +
+                    "locations: " + m.activeLocations + "\n" +
                     "duration: " + formatDuration(duration) + "\n" +
-                    "distance: " + formatDistance(m.getActiveDistance());
+                    "distance: " + formatDistance(m.activeDistance);
 
-            double avgSpeed = avgSpeed(m.getActiveDistance(), duration);
+            double avgSpeed = avgSpeed(m.activeDistance, duration);
             if (avgSpeed != 0.0) {
                 text += "\navg. speed: " + formatSpeed(avgSpeed);
             }
@@ -280,7 +257,7 @@ public class MovementTracker extends Activity {
         recordingText.setText(text);
     }
 
-    private View prepareHistoryView() throws Failure {
+    private View prepareHistoryView() {
         if (historyView == null) {
             historyView = new RelativeLayout(this);
 
@@ -343,12 +320,12 @@ public class MovementTracker extends Activity {
         dialog.show();
     }
 
-    public void reloadHistoryList() throws Failure {
+    public void reloadHistoryList() {
         if (historyList == null) {
             return;
         }
 
-        final ArrayList<HistoryRow> historyItems = m.getDatabase().getHistory();
+        final ArrayList<HistoryRow> historyItems = m.database.getHistory();
         String[] items = new String[historyItems.size()];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.get(i);
@@ -379,7 +356,7 @@ public class MovementTracker extends Activity {
         updateText();
     }
 
-    public void recordingStopped() throws Failure {
+    public void recordingStopped() {
         for (MovementTypeButton button : buttons) {
             button.resetBackground();
         }

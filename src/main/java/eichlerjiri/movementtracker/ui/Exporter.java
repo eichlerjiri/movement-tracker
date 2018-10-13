@@ -9,22 +9,26 @@ import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import eichlerjiri.movementtracker.Database;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.Failure;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Exporter {
 
-    public static void exportTracks(final Context context, final long sinceTs, final String format) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+    public static void exportTracks(final Context c, final long sinceTs, final String format) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(c)
                 .setMessage("Please wait")
                 .setTitle("Exporting " + format.toUpperCase());
 
@@ -35,16 +39,12 @@ public class Exporter {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try {
-                    threaded(context, alertDialog, sinceTs, format);
-                } catch (Failure ignored) {
-                }
+                threaded(c, alertDialog, sinceTs, format);
             }
         }).start();
     }
 
-    private static void threaded(final Context context, final AlertDialog alertDialog, long sinceTs, String format)
-            throws Failure {
+    private static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -58,7 +58,7 @@ public class Exporter {
 
         String res;
         try {
-            int cnt = doExport(new File(docsDir, filename), sinceTs, format);
+            int cnt = doExport(c, new File(docsDir, filename), sinceTs, format);
             res = "Exported " + cnt + " recordings to " + dirLocs + "/" + filename;
         } catch (IOException e) {
             Log.e("Exporter", "Export failed", e);
@@ -70,36 +70,39 @@ public class Exporter {
             @Override
             public void run() {
                 alertDialog.hide();
-                Toast.makeText(context, ress, Toast.LENGTH_LONG).show();
+                Toast.makeText(c, ress, Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private static int doExport(File docsDir, long sinceTs, String format) throws IOException, Failure {
-        FileWriter fw = new FileWriter(docsDir);
+    private static int doExport(Context c, File docsDir, long sinceTs, String format) throws IOException {
+        BufferedWriter w = new BufferedWriter(new FileWriter(docsDir));
         try {
             if (format.equals("tcx")) {
-                return doWriteTCX(Model.getInstance().getDatabase(), sinceTs, fw);
+                return doWriteTCX(Model.getInstance(c).database, sinceTs, w);
             } else {
-                return doWriteGPX(Model.getInstance().getDatabase(), sinceTs, fw);
+                return doWriteGPX(Model.getInstance(c).database, sinceTs, w);
             }
         } finally {
             try {
-                fw.close();
+                w.close();
             } catch (IOException e) {
                 Log.e("Exporter", "Cannot close stream", e);
             }
         }
     }
 
-    private static int doWriteTCX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
-        fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        fw.write("<TrainingCenterDatabase" +
+    private static int doWriteTCX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+        w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        w.write("<TrainingCenterDatabase" +
                 " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +
                 " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
                 " xsi:schemaLocation=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" +
                 " http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd\">\n");
-        fw.write("<Activities>\n");
+        w.write("<Activities>\n");
+
+        SimpleDateFormat utcFormatter = utcFormatter();
+        Date date = new Date(0);
 
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
@@ -112,41 +115,54 @@ public class Exporter {
                 type = "Running";
             }
 
-            fw.write("<Activity Sport=\"" + type + "\">\n");
-            fw.write("<Lap>\n");
-            fw.write("<Track>\n");
+            w.write("<Activity Sport=\"");
+            w.write(type);
+            w.write("\">\n");
+            w.write("<Lap>\n");
+            w.write("<Track>\n");
 
             for (LocationRow loc : d.getLocations(row.id)) {
-                fw.write("<Trackpoint>\n");
-                fw.write("<Time>" + formatDateTimeTZ(loc.ts) + "</Time>\n");
-                fw.write("<Position>\n");
-                fw.write("<LatitudeDegrees>" + loc.lat + "</LatitudeDegrees>\n");
-                fw.write("<LongitudeDegrees>" + loc.lon + "</LongitudeDegrees>\n");
-                fw.write("</Position>\n");
-                fw.write("</Trackpoint>\n");
+                date.setTime(loc.ts);
+
+                w.write("<Trackpoint>\n");
+                w.write("<Time>");
+                w.write(utcFormatter.format(date));
+                w.write("</Time>\n");
+                w.write("<Position>\n");
+                w.write("<LatitudeDegrees>");
+                w.write(Double.toString(loc.lat));
+                w.write("</LatitudeDegrees>\n");
+                w.write("<LongitudeDegrees>");
+                w.write(Double.toString(loc.lon));
+                w.write("</LongitudeDegrees>\n");
+                w.write("</Position>\n");
+                w.write("</Trackpoint>\n");
             }
 
-            fw.write("</Track>\n");
-            fw.write("</Lap>\n");
-            fw.write("</Activity>\n");
+            w.write("</Track>\n");
+            w.write("</Lap>\n");
+            w.write("</Activity>\n");
 
             cnt++;
         }
 
-        fw.write("</Activities>\n");
-        fw.write("</TrainingCenterDatabase>\n");
+        w.write("</Activities>\n");
+        w.write("</TrainingCenterDatabase>\n");
 
         return cnt;
     }
 
-    private static int doWriteGPX(Database d, long sinceTs, FileWriter fw) throws IOException, Failure {
-        fw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        fw.write("<gpx version=\"1.1\"" +
+    private static int doWriteGPX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+        w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        w.write("<gpx version=\"1.1\"" +
                 " xmlns=\"http://www.topografix.com/GPX/1/1\"" +
                 " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
                 " xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1" +
                 " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
 
+        SimpleDateFormat utcFormatter = utcFormatter();
+        Date date = new Date(0);
+
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
             String type = "";
@@ -158,24 +174,40 @@ public class Exporter {
                 type = "Running";
             }
 
-            fw.write("<trk>\n");
-            fw.write("<type>" + type + "</type>\n");
-            fw.write("<trkseg>\n");
+            w.write("<trk>\n");
+            w.write("<type>");
+            w.write(type);
+            w.write("</type>\n");
+            w.write("<trkseg>\n");
 
             for (LocationRow loc : d.getLocations(row.id)) {
-                fw.write("<trkpt lat=\"" + loc.lat + "\" lon=\"" + loc.lon + "\">\n");
-                fw.write("<time>" + formatDateTimeTZ(loc.ts) + "</time>\n");
-                fw.write("</trkpt>\n");
+                date.setTime(loc.ts);
+
+                w.write("<trkpt lat=\"");
+                w.write(Double.toString(loc.lat));
+                w.write("\" lon=\"");
+                w.write(Double.toString(loc.lon));
+                w.write("\">\n");
+                w.write("<time>");
+                w.write(utcFormatter.format(date));
+                w.write("</time>\n");
+                w.write("</trkpt>\n");
             }
 
-            fw.write("</trkseg>\n");
-            fw.write("</trk>\n");
+            w.write("</trkseg>\n");
+            w.write("</trk>\n");
 
             cnt++;
         }
 
-        fw.write("</gpx>\n");
+        w.write("</gpx>\n");
 
         return cnt;
+    }
+
+    private static SimpleDateFormat utcFormatter() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return formatter;
     }
 }

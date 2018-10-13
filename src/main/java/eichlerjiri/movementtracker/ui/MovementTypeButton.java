@@ -9,7 +9,6 @@ import android.view.View;
 import android.widget.Button;
 
 import eichlerjiri.movementtracker.Model;
-import eichlerjiri.movementtracker.utils.Failure;
 
 public class MovementTypeButton extends Button {
 
@@ -19,7 +18,7 @@ public class MovementTypeButton extends Button {
 
     public MovementTypeButton(Context c, final String movementType) {
         super(c);
-        m = Model.getInstance();
+        m = Model.getInstance(c);
 
         originalBackground = getBackground();
         originalTextColor = getCurrentTextColor();
@@ -28,23 +27,20 @@ public class MovementTypeButton extends Button {
         setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    handleClick(movementType);
-                } catch (Failure ignored) {
-                }
+                handleClick(movementType);
             }
         });
 
-        if (m.getActiveRecordingType().equals(movementType)) {
+        if (m.activeRecordingType.equals(movementType)) {
             setBackgroundColor(Color.GREEN);
         }
     }
 
-    private void handleClick(final String movementType) throws Failure {
-        final String activeRecordingType = m.getActiveRecordingType();
+    private void handleClick(final String movementType) {
+        final String activeRecordingType = m.activeRecordingType;
 
         if (!activeRecordingType.isEmpty()) {
-            if (m.getActiveLocations() < 2) {
+            if (m.activeLocations < 2) {
                 restartRecording(movementType, activeRecordingType, true);
                 return;
             }
@@ -58,10 +54,7 @@ public class MovementTypeButton extends Button {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            try {
-                                restartRecording(movementType, activeRecordingType, false);
-                            } catch (Failure ignored) {
-                            }
+                            restartRecording(movementType, activeRecordingType, false);
                         }
                     });
             alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
@@ -71,14 +64,14 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void restartRecording(String movementType, String activeRecordingType, boolean delete) throws Failure {
+    private void restartRecording(String movementType, String activeRecordingType, boolean delete) {
         m.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
             startRecording(movementType);
         }
     }
 
-    private void startRecording(String movementType) throws Failure {
+    private void startRecording(String movementType) {
         m.startRecording(movementType);
         setBackgroundColor(Color.GREEN);
         setTextColor(Color.BLACK);

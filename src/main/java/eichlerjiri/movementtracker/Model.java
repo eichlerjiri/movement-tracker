@@ -5,41 +5,46 @@ import android.location.Location;
 
 import java.util.ArrayList;
 
-import eichlerjiri.movementtracker.utils.Failure;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Model {
 
-    private static final Model instance = new Model();
+    private static Model instance;
 
-    public static Model getInstance() {
+    public static Model getInstance(Context c) {
+        if (instance == null) {
+            instance = new Model(c);
+        }
         return instance;
     }
 
+    public final Database database;
+
     private TrackingService trackingService;
     private final ArrayList<MovementTracker> movementTrackers = new ArrayList<>();
-    private final ArrayList<MovementDetail> movementDetails = new ArrayList<>();
-
-    private Database database;
-
-    private Location lastKnownLocation;
-    private Location lastLocation;
-    private boolean receivingLocations;
     private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
 
-    private long activeRecording;
-    private String activeRecordingType = "";
+    public Location lastKnownLocation;
+    public Location lastLocation;
+    public boolean receivingLocations;
 
-    private long activeTsFrom;
-    private long activeTsTo;
-    private long activeLocations;
-    private double activeDistance;
-    private GeoBoundary activeGeoBoundary;
+    public long activeRecording;
+    public String activeRecordingType = "";
+
+    public long activeTsFrom;
+    public long activeTsTo;
+    public long activeLocations;
+    public double activeDistance;
+    public GeoBoundary activeGeoBoundary;
+
     private Location lastRecordedLocation;
-
     private int notificationCounter;
+
+    public Model(Context c) {
+        database = new Database(c);
+    }
 
     public void registerTrackingService(TrackingService service) {
         trackingService = service;
@@ -57,74 +62,7 @@ public class Model {
         movementTrackers.remove(movementTracker);
     }
 
-    public void registerMovementDetail(MovementDetail movementDetail) {
-        movementDetails.add(movementDetail);
-    }
-
-    public void unregisterMovementDetail(MovementDetail movementDetail) {
-        movementDetails.remove(movementDetail);
-    }
-
-    public Context getAnyContext() throws Failure {
-        if (!movementTrackers.isEmpty()) {
-            return movementTrackers.get(0);
-        } else if (!movementDetails.isEmpty()) {
-            return movementDetails.get(0);
-        } else if (trackingService != null) {
-            return trackingService;
-        } else {
-            throw new Failure("No context found.");
-        }
-    }
-
-    public Database getDatabase() throws Failure {
-        if (database == null) {
-            database = new Database();
-        }
-        return database;
-    }
-
-    public Location getLastLocation() {
-        return lastLocation;
-    }
-
-    public Location getLastKnownLocation() {
-        return lastKnownLocation;
-    }
-
-    public String getActiveRecordingType() {
-        return activeRecordingType;
-    }
-
-    public long getActiveRecording() {
-        return activeRecording;
-    }
-
-    public boolean isReceivingLocations() {
-        return receivingLocations;
-    }
-
-    public long getActiveTsFrom() {
-        return activeTsFrom;
-    }
-
-    public long getActiveTsTo() {
-        return activeTsTo;
-    }
-
-    public long getActiveLocations() {
-        return activeLocations;
-    }
-
-    public double getActiveDistance() {
-        return activeDistance;
-    }
-
-    public GeoBoundary getActiveGeoBoundary() {
-        return activeGeoBoundary;
-    }
-
-    public void locationArrived(Location location) throws Failure {
+    public void locationArrived(Location location) {
         boolean recorded = recordLocation(location, false);
         lastLocation = location;
 
@@ -141,7 +79,7 @@ public class Model {
         }
     }
 
-    private boolean recordLocation(Location location, boolean last) throws Failure {
+    private boolean recordLocation(Location location, boolean last) {
         if (activeRecordingType.isEmpty()) {
             return false;
         }
@@ -163,11 +101,11 @@ public class Model {
         return false;
     }
 
-    private void doRecordLocation(Location location) throws Failure {
+    private void doRecordLocation(Location location) {
         long now = System.currentTimeMillis();
 
         // using device-time, not location time
-        getDatabase().saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
+        database.saveLocation(activeRecording, now, location.getLatitude(), location.getLongitude());
 
         activeTsTo = now;
         activeLocations++;
@@ -175,10 +113,10 @@ public class Model {
         lastRecordedLocation = location;
     }
 
-    public void startRecording(String movementType) throws Failure {
+    public void startRecording(String movementType) {
         long now = System.currentTimeMillis();
 
-        activeRecording = getDatabase().startRecording(now, movementType);
+        activeRecording = database.startRecording(now, movementType);
         activeRecordingType = movementType;
 
         activeTsFrom = now;
@@ -198,15 +136,15 @@ public class Model {
         }
     }
 
-    public void stopRecording(boolean delete) throws Failure {
+    public void stopRecording(boolean delete) {
         if (lastRecordedLocation != null && lastRecordedLocation != lastLocation) {
             recordLocation(lastLocation, true);
         }
 
         if (delete) {
-            getDatabase().deleteRecording(activeRecording);
+            database.deleteRecording(activeRecording);
         } else {
-            getDatabase().finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
+            database.finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
         }
 
         activeRecordingType = "";
@@ -221,24 +159,24 @@ public class Model {
         }
     }
 
-    public void deleteRecording(long id) throws Failure {
-        getDatabase().deleteRecording(id);
+    public void deleteRecording(long id) {
+        database.deleteRecording(id);
         for (MovementTracker movementTracker : movementTrackers) {
             movementTracker.reloadHistoryList();
         }
     }
 
-    public void startedMovementTracker(MovementTracker movementTracker) throws Failure {
+    public void startedMovementTracker(MovementTracker movementTracker) {
         startedMovementTrackers.add(movementTracker);
         refreshReceiving();
     }
 
-    public void stoppedMovementTracker(MovementTracker movementTracker) throws Failure {
+    public void stoppedMovementTracker(MovementTracker movementTracker) {
         startedMovementTrackers.remove(movementTracker);
         refreshReceiving();
     }
 
-    private void refreshReceiving() throws Failure {
+    private void refreshReceiving() {
         boolean requested = !startedMovementTrackers.isEmpty() || !activeRecordingType.isEmpty();
 
         if (requested && !receivingLocations) {

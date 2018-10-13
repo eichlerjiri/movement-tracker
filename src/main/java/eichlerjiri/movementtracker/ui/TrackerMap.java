@@ -11,7 +11,6 @@ import eichlerjiri.mapcomponent.utils.DoubleArrayList;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.Failure;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 
@@ -26,54 +25,14 @@ public class TrackerMap extends MapComponent {
 
     public TrackerMap(Context c, ArrayList<String> mapUrls) {
         super(c, mapUrls);
-        m = Model.getInstance();
+        m = Model.getInstance(c);
 
-        try {
-            doInit();
-        } catch (Failure ignored) {
-        }
-    }
-
-    @Override
-    public void centerMap() {
-        Location last = m.getLastLocation();
-        Location lastKnown = m.getLastKnownLocation();
-        double lat;
-        double lon;
-        float zoom;
-        if (last != null) {
-            lat = last.getLatitude();
-            lon = last.getLongitude();
-            zoom = 18;
-        } else if (lastKnown != null) {
-            lat = lastKnown.getLatitude();
-            lon = lastKnown.getLongitude();
-            zoom = 15;
-        } else {
-            lat = 50.083333; // prague
-            lon = 14.416667;
-            zoom = 4;
-        }
-
-        if (!m.getActiveRecordingType().isEmpty()) {
-            GeoBoundary geoBoundary = new GeoBoundary(m.getActiveGeoBoundary());
-            geoBoundary.addPoint(lonToMercatorX(lon), latToMercatorY(lat));
-            moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, zoom, 30);
-        } else {
-            setPosition(lonToMercatorX(lon), latToMercatorY(lat));
-            setZoom(zoom);
-            setAzimuth(0);
-        }
-        commit();
-    }
-
-    private void doInit() throws Failure {
-        if (m.getLastLocation() != null) {
+        if (m.lastLocation != null) {
             updateLocation(false);
         }
 
-        if (!m.getActiveRecordingType().isEmpty()) {
-            ArrayList<LocationRow> locs = m.getDatabase().getLocations(m.getActiveRecording());
+        if (!m.activeRecordingType.isEmpty()) {
+            ArrayList<LocationRow> locs = m.database.getLocations(m.activeRecording);
 
             for (LocationRow row : locs) {
                 pathPositions.add(lonToMercatorX(row.lon), latToMercatorY(row.lat));
@@ -100,8 +59,41 @@ public class TrackerMap extends MapComponent {
         });
     }
 
+    @Override
+    public void centerMap() {
+        Location last = m.lastLocation;
+        Location lastKnown = m.lastKnownLocation;
+        double lat;
+        double lon;
+        float zoom;
+        if (last != null) {
+            lat = last.getLatitude();
+            lon = last.getLongitude();
+            zoom = 18;
+        } else if (lastKnown != null) {
+            lat = lastKnown.getLatitude();
+            lon = lastKnown.getLongitude();
+            zoom = 15;
+        } else {
+            lat = 50.083333; // prague
+            lon = 14.416667;
+            zoom = 4;
+        }
+
+        if (!m.activeRecordingType.isEmpty()) {
+            GeoBoundary geoBoundary = new GeoBoundary(m.activeGeoBoundary);
+            geoBoundary.addPoint(lonToMercatorX(lon), latToMercatorY(lat));
+            moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, zoom, 30);
+        } else {
+            setPosition(lonToMercatorX(lon), latToMercatorY(lat));
+            setZoom(zoom);
+            setAzimuth(0);
+        }
+        commit();
+    }
+
     public void updateLocation(boolean recorded) {
-        Location l = m.getLastLocation();
+        Location l = m.lastLocation;
         double lat = l.getLatitude();
         double lon = l.getLongitude();
 

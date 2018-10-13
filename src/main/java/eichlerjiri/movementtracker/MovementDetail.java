@@ -18,7 +18,6 @@ import eichlerjiri.mapcomponent.utils.DoubleArrayList;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.Failure;
 
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
@@ -35,19 +34,71 @@ public class MovementDetail extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m = Model.getInstance();
-        m.registerMovementDetail(this);
+        m = Model.getInstance(this);
 
-        try {
-            doCreate();
-        } catch (Failure ignored) {
+        TextView detailText = new TextView(this);
+
+        int padding = Math.round(4 * spSize(this));
+        detailText.setPadding(padding, 0, padding, 0);
+
+        LinearLayout detailView = new LinearLayout(this);
+        detailView.setOrientation(LinearLayout.VERTICAL);
+
+        map = new MapComponent(this, splitNonEmpty(" ", getText(R.string.map_urls).toString())) {
+            @Override
+            public void centerMap() {
+                doCenterMap();
+            }
+        };
+
+        detailView.addView(detailText);
+        detailView.addView(map);
+        setContentView(detailView);
+
+        ActionBar actionBar = getActionBar();
+        if (actionBar == null) {
+            throw new Error("Action bar not available");
         }
+
+        actionBar.setDisplayShowHomeEnabled(false);
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        recording = getHistoryItem();
+        if (recording == null) {
+            detailText.setText("Detail not available");
+            return;
+        }
+
+        setTitle(recording.movementType);
+
+        long from = recording.ts;
+        long to = recording.tsEnd;
+        long duration = to - from;
+        double distance = recording.distance;
+
+        boolean sameDay = isSameDay(from, to);
+
+        final ArrayList<LocationRow> locations = m.database.getLocations(recording.id);
+
+        String text = "from " + formatDateTime(from) +
+                " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
+                "locations: " + locations.size() + "\n" +
+                "duration: " + formatDuration(duration) + "\n" +
+                "distance: " + formatDistance(distance);
+
+        double avgSpeed = avgSpeed(distance, duration);
+        if (avgSpeed != 0.0) {
+            text += "\navg. speed: " + formatSpeed(avgSpeed);
+        }
+
+        detailText.setText(text);
+
+        drawLine(locations);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        m.unregisterMovementDetail(this);
 
         map.close();
     }
@@ -89,73 +140,12 @@ public class MovementDetail extends Activity {
         outState.putBundle("map", map.saveInstanceState());
     }
 
-    private void doCreate() throws Failure {
-        TextView detailText = new TextView(this);
-
-        int padding = Math.round(4 * spSize(this));
-        detailText.setPadding(padding, 0, padding, 0);
-
-        LinearLayout detailView = new LinearLayout(this);
-        detailView.setOrientation(LinearLayout.VERTICAL);
-
-        map = new MapComponent(this, splitNonEmpty(" ", getText(R.string.map_urls).toString())) {
-            @Override
-            public void centerMap() {
-                doCenterMap();
-            }
-        };
-
-        detailView.addView(detailText);
-        detailView.addView(map);
-        setContentView(detailView);
-
-        ActionBar actionBar = getActionBar();
-        if (actionBar == null) {
-            throw new Failure("Action bar not available");
-        }
-
-        actionBar.setDisplayShowHomeEnabled(false);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-
-        recording = getHistoryItem();
-        if (recording == null) {
-            detailText.setText("Detail not available");
-            return;
-        }
-
-        setTitle(recording.movementType);
-
-        long from = recording.ts;
-        long to = recording.tsEnd;
-        long duration = to - from;
-        double distance = recording.distance;
-
-        boolean sameDay = isSameDay(from, to);
-
-        final ArrayList<LocationRow> locations = m.getDatabase().getLocations(recording.id);
-
-        String text = "from " + formatDateTime(from) +
-                " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
-                "locations: " + locations.size() + "\n" +
-                "duration: " + formatDuration(duration) + "\n" +
-                "distance: " + formatDistance(distance);
-
-        double avgSpeed = avgSpeed(distance, duration);
-        if (avgSpeed != 0.0) {
-            text += "\navg. speed: " + formatSpeed(avgSpeed);
-        }
-
-        detailText.setText(text);
-
-        drawLine(locations);
-    }
-
-    private HistoryRow getHistoryItem() throws Failure {
+    private HistoryRow getHistoryItem() {
         Bundle b = getIntent().getExtras();
         if (b != null) {
             long id = b.getLong("id");
             if (id > 0) {
-                return m.getDatabase().getHistoryItem(id);
+                return m.database.getHistoryItem(id);
             }
         }
         return null;
@@ -211,17 +201,14 @@ public class MovementDetail extends Activity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        try {
-                            doDeleteRecording();
-                        } catch (Failure ignored) {
-                        }
+                        doDeleteRecording();
                     }
                 });
         alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
         alertDialog.show();
     }
 
-    private void doDeleteRecording() throws Failure {
+    private void doDeleteRecording() {
         m.deleteRecording(recording.id);
         finish();
     }
