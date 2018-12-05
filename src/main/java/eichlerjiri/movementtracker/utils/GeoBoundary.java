@@ -2,10 +2,10 @@ package eichlerjiri.movementtracker.utils;
 
 public class GeoBoundary {
 
-    public double minX = Double.MAX_VALUE;
-    public double maxX = Double.MIN_VALUE;
-    public double minY = Double.MAX_VALUE;
-    public double maxY = Double.MIN_VALUE;
+    public double minX = Double.POSITIVE_INFINITY;
+    public double maxX = Double.NEGATIVE_INFINITY;
+    public double minY = Double.POSITIVE_INFINITY;
+    public double maxY = Double.NEGATIVE_INFINITY;
 
     public GeoBoundary() {
     }

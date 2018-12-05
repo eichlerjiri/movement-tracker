@@ -98,9 +98,9 @@ public class TrackerMap extends MapComponent {
         double lon = l.getLongitude();
 
         if (l == null) {
-            setCurrentPosition(Double.MIN_VALUE, Double.MIN_VALUE, Float.MIN_VALUE);
+            setCurrentPosition(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
         } else {
-            float bearing = l.hasBearing() ? l.getBearing() : Float.MIN_VALUE;
+            float bearing = l.hasBearing() ? l.getBearing() : Float.NEGATIVE_INFINITY;
             setCurrentPosition(lonToMercatorX(l.getLongitude()), latToMercatorY(l.getLatitude()), bearing);
         }
 
@@ -131,7 +131,7 @@ public class TrackerMap extends MapComponent {
         pathPositions = new DoubleArrayList();
         setPath(null, 0, 0);
 
-        setStartPosition(Double.MIN_VALUE, Double.MIN_VALUE);
+        setStartPosition(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
         startDisplayed = false;
 
         commit();
