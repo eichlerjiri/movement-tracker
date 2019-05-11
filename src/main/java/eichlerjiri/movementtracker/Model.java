@@ -50,7 +50,7 @@ public class Model {
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
-            public void uncaughtException(Thread t, final Throwable e) {
+            public void uncaughtException(Thread t, Throwable e) {
                 Log.e("Model", e.getMessage(), e);
 
                 Intent intent = new Intent(appContext, ErrorActivity.class);

@@ -11,8 +11,9 @@ import android.widget.Toast;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -30,7 +31,7 @@ public class Exporter {
     public static void exportTracks(final Context c, final long sinceTs, final String format) {
         AlertDialog.Builder builder = new AlertDialog.Builder(c)
                 .setMessage("Please wait")
-                .setTitle("Exporting " + format.toUpperCase());
+                .setTitle("Exporting " + format.toUpperCase(Locale.US));
 
         final AlertDialog alertDialog = builder.create();
         alertDialog.setCancelable(false);
@@ -44,7 +45,7 @@ public class Exporter {
         }).start();
     }
 
-    private static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
+    static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -76,9 +77,9 @@ public class Exporter {
     }
 
     private static int doExport(Context c, File docsDir, long sinceTs, String format) throws IOException {
-        BufferedWriter w = new BufferedWriter(new FileWriter(docsDir));
+        BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), "UTF-8"));
         try {
-            if (format.equals("tcx")) {
+            if ("tcx".equals(format)) {
                 return doWriteTCX(Model.getInstance(c).database, sinceTs, w);
             } else {
                 return doWriteGPX(Model.getInstance(c).database, sinceTs, w);
@@ -106,11 +107,11 @@ public class Exporter {
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
             String type = "";
-            if (row.movementType.equals("walk")) {
+            if ("walk".equals(row.movementType)) {
                 type = "Walking";
-            } else if (row.movementType.equals("bike")) {
+            } else if ("bike".equals(row.movementType)) {
                 type = "Biking";
-            } else if (row.movementType.equals("run")) {
+            } else if ("run".equals(row.movementType)) {
                 type = "Running";
             }
 
@@ -162,11 +163,11 @@ public class Exporter {
         int cnt = 0;
         for (HistoryRow row : d.getHistorySince(sinceTs)) {
             String type = "";
-            if (row.movementType.equals("walk")) {
+            if ("walk".equals(row.movementType)) {
                 type = "Walking";
-            } else if (row.movementType.equals("bike")) {
+            } else if ("bike".equals(row.movementType)) {
                 type = "Biking";
-            } else if (row.movementType.equals("run")) {
+            } else if ("run".equals(row.movementType)) {
                 type = "Running";
             }
 

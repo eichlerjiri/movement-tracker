@@ -36,7 +36,7 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void handleClick(final String movementType) {
+    void handleClick(final String movementType) {
         final String activeRecordingType = m.activeRecordingType;
 
         if (!activeRecordingType.isEmpty()) {
@@ -64,7 +64,7 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    private void restartRecording(String movementType, String activeRecordingType, boolean delete) {
+    void restartRecording(String movementType, String activeRecordingType, boolean delete) {
         m.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
             startRecording(movementType);

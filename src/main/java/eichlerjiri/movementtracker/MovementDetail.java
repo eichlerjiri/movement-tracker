@@ -15,9 +15,9 @@ import java.util.ArrayList;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleArrayList;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
@@ -29,7 +29,7 @@ public class MovementDetail extends Activity {
     private MapComponent map;
     private GeoBoundary geoBoundary;
 
-    private boolean donePositionInit;
+    boolean donePositionInit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +78,7 @@ public class MovementDetail extends Activity {
 
         boolean sameDay = isSameDay(from, to);
 
-        final ArrayList<LocationRow> locations = m.database.getLocations(recording.id);
+        ArrayList<LocationRow> locations = m.database.getLocations(recording.id);
 
         String text = "from " + formatDateTime(from) +
                 " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
@@ -186,12 +186,12 @@ public class MovementDetail extends Activity {
         });
     }
 
-    private void doCenterMap() {
+    void doCenterMap() {
         map.moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, 18, 30);
         map.commit();
     }
 
-    private void confirmDeleteRecording() {
+    void confirmDeleteRecording() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setMessage("Really delete recording?")
                 .setTitle("Delete recording?");
@@ -208,7 +208,7 @@ public class MovementDetail extends Activity {
         alertDialog.show();
     }
 
-    private void doDeleteRecording() {
+    void doDeleteRecording() {
         m.deleteRecording(recording.id);
         finish();
     }

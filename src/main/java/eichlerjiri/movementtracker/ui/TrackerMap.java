@@ -8,9 +8,9 @@ import java.util.ArrayList;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleArrayList;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.LocationRow;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 

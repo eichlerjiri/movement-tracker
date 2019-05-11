@@ -5,18 +5,18 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath 'com.android.tools.build:gradle:3.4.0'
     }
 }
 
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     defaultConfig {
-        applicationId "eichlerjiri.movementtracker"
         minSdkVersion 14
-        targetSdkVersion 26
+        targetSdkVersion 28
+        applicationId "eichlerjiri.movementtracker"
         versionCode 1
         versionName "1.0"
         resValue "string", "map_urls", project.findProperty("MAP_URLS")
@@ -29,5 +29,5 @@ repositories {
 }
 
 dependencies {
-    compile project(':map-component')
+    implementation project(':map-component')
 }

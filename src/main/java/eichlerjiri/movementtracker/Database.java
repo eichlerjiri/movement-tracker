@@ -31,7 +31,7 @@ public class Database {
         }.getWritableDatabase();
     }
 
-    private void createDatabase(SQLiteDatabase sqlite) {
+    static void createDatabase(SQLiteDatabase sqlite) {
         execSQL(sqlite, "CREATE TABLE recording(id INTEGER PRIMARY KEY," +
                 "ts INTEGER," +
                 "ts_end INTEGER," +
@@ -50,32 +50,32 @@ public class Database {
         execSQL(sqlite, "CREATE INDEX location_recording_ts ON location(id_recording,ts)");
     }
 
-    private void upgradeDatabase(int oldVersion, int newVersion) {
+    static void upgradeDatabase(int oldVersion, int newVersion) {
         Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
     }
 
     public void saveLocation(long idRecording, long timestamp, double lat, double lon) {
         ContentValues values = new ContentValues();
-        values.put("id_recording", idRecording);
-        values.put("ts", timestamp);
-        values.put("lat", lat);
-        values.put("lon", lon);
+        values.put("id_recording", Long.valueOf(idRecording));
+        values.put("ts", Long.valueOf(timestamp));
+        values.put("lat", Double.valueOf(lat));
+        values.put("lon", Double.valueOf(lon));
         insert(d, "location", values);
     }
 
     public long startRecording(long timestamp, String movementType) {
         ContentValues values = new ContentValues();
-        values.put("ts", timestamp);
-        values.put("ts_end", 0L);
+        values.put("ts", Long.valueOf(timestamp));
+        values.put("ts_end", Long.valueOf(0L));
         values.put("movement_type", movementType);
-        values.put("distance", 0.0);
+        values.put("distance", Double.valueOf(0.0));
         return insert(d, "recording", values);
     }
 
     public void finishRecording(long timestamp, long id, double distance) {
         ContentValues values = new ContentValues();
-        values.put("ts_end", timestamp);
-        values.put("distance", distance);
+        values.put("ts_end", Long.valueOf(timestamp));
+        values.put("distance", Double.valueOf(distance));
         update(d, "recording", values, "id=?", new String[]{String.valueOf(id)});
     }
 
@@ -126,7 +126,7 @@ public class Database {
         return ret;
     }
 
-    private void execSQL(SQLiteDatabase sqlite, String sql) {
+    private static void execSQL(SQLiteDatabase sqlite, String sql) {
         try {
             sqlite.execSQL(sql);
         } catch (SQLException e) {
@@ -134,7 +134,7 @@ public class Database {
         }
     }
 
-    private long insert(SQLiteDatabase sqlite, String table, ContentValues values) {
+    private static long insert(SQLiteDatabase sqlite, String table, ContentValues values) {
         try {
             return sqlite.insertOrThrow(table, null, values);
         } catch (SQLException e) {
@@ -142,7 +142,8 @@ public class Database {
         }
     }
 
-    private int update(SQLiteDatabase sqlite, String table, ContentValues values, String where, String[] whereValues) {
+    private static int update(SQLiteDatabase sqlite, String table, ContentValues values,
+            String where, String[] whereValues) {
         try {
             return sqlite.update(table, values, where, whereValues);
         } catch (SQLException e) {
@@ -150,7 +151,7 @@ public class Database {
         }
     }
 
-    private int delete(SQLiteDatabase sqlite, String table, String where, String[] whereValues) {
+    private static int delete(SQLiteDatabase sqlite, String table, String where, String[] whereValues) {
         try {
             return sqlite.delete(table, where, whereValues);
         } catch (SQLException e) {
@@ -158,8 +159,8 @@ public class Database {
         }
     }
 
-    private Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
-                         String[] selectionArgs, String groupBy, String having, String orderBy) {
+    private static Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
+            String[] selectionArgs, String groupBy, String having, String orderBy) {
         try {
             return sqlite.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
         } catch (SQLException e) {

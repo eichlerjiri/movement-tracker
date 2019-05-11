@@ -27,6 +27,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.Exporter;
@@ -41,9 +42,9 @@ public class MovementTracker extends Activity {
     private Model m;
 
     private ActionBar actionBar;
-    private ActionBar.Tab recordingTab;
-    private ActionBar.Tab historyTab;
-    private LinearLayout recordingView;
+    ActionBar.Tab recordingTab;
+    ActionBar.Tab historyTab;
+    LinearLayout recordingView;
     private RelativeLayout historyView;
 
     private TextView recordingText;
@@ -64,7 +65,7 @@ public class MovementTracker extends Activity {
     };
     private boolean serviceBound;
 
-    private String formatClicked;
+    String formatClicked;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -257,7 +258,7 @@ public class MovementTracker extends Activity {
         recordingText.setText(text);
     }
 
-    private View prepareHistoryView() {
+    View prepareHistoryView() {
         if (historyView == null) {
             historyView = new RelativeLayout(this);
 
@@ -289,7 +290,7 @@ public class MovementTracker extends Activity {
 
     private Button prepareExportButton(final String format) {
         Button exportButton = new Button(this);
-        exportButton.setText("Export " + format.toUpperCase());
+        exportButton.setText("Export " + format.toUpperCase(Locale.US));
         exportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -305,7 +306,7 @@ public class MovementTracker extends Activity {
         return exportButton;
     }
 
-    private void showDateExportSelector(final String format) {
+    void showDateExportSelector(final String format) {
         GregorianCalendar cal = new GregorianCalendar();
 
         DatePickerDialog dialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {

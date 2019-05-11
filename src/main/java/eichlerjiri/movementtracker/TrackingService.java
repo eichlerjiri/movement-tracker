@@ -17,7 +17,7 @@ import android.os.IBinder;
 
 public class TrackingService extends Service {
 
-    private Model m;
+    Model m;
 
     private LocationManager locationManager;
     private LocationListener locationListener;
