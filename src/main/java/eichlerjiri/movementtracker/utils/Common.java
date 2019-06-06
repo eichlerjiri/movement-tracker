@@ -3,10 +3,13 @@ package eichlerjiri.movementtracker.utils;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import eichlerjiri.mapcomponent.utils.ObjectList;
+
+import static java.lang.Math.*;
 
 public class Common {
 
@@ -15,17 +18,17 @@ public class Common {
     }
 
     public static double latToMercatorY(double lat) {
-        double y = Math.log(Math.tan((lat + 90) * (Math.PI / 360)));
-        return 0.5 - y / (2 * Math.PI);
+        double y = log(tan((lat + 90) * (PI / 360)));
+        return 0.5 - y / (2 * PI);
     }
 
     public static double distance(double lat1, double lon1, double lat2, double lon2) {
-        double thetaRad = Math.toRadians(lon1 - lon2);
-        double lat1Rad = Math.toRadians(lat1);
-        double lat2Rad = Math.toRadians(lat2);
+        double thetaRad = toRadians(lon1 - lon2);
+        double lat1Rad = toRadians(lat1);
+        double lat2Rad = toRadians(lat2);
 
-        double d = Math.sin(lat1Rad) * Math.sin(lat2Rad) + Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.cos(thetaRad);
-        double ret = Math.toDegrees(Math.acos(d)) * 60 * 1.1515 * 1.609344 * 1000;
+        double d = sin(lat1Rad) * sin(lat2Rad) + cos(lat1Rad) * cos(lat2Rad) * cos(thetaRad);
+        double ret = toDegrees(acos(d)) * 60 * 1.1515 * 1.609344 * 1000;
         if (Double.isNaN(ret)) {
             return 0;
         }
@@ -39,25 +42,21 @@ public class Common {
         return distance / (duration / 1000.0);
     }
 
-    public static ArrayList<String> splitNonEmpty(String delimiter, String value) {
-        ArrayList<String> ret = new ArrayList<>();
+    public static ObjectList<String> splitNonEmpty(String delimiter, String value) {
+        ObjectList<String> ret = new ObjectList<>(String.class);
 
         int startIndex = 0;
-        while (true) {
-            int index = value.indexOf(delimiter, startIndex);
-            if (index == -1) {
-                addIfNonEmpty(ret, value.substring(startIndex));
-                break;
-            }
-
+        int index;
+        while ((index = value.indexOf(delimiter, startIndex)) != -1) {
             addIfNonEmpty(ret, value.substring(startIndex, index));
             startIndex = index + delimiter.length();
         }
+        addIfNonEmpty(ret, value.substring(startIndex));
 
         return ret;
     }
 
-    public static void addIfNonEmpty(ArrayList<String> ret, String value) {
+    public static void addIfNonEmpty(ObjectList<String> ret, String value) {
         value = value.trim();
         if (!value.isEmpty()) {
             ret.add(value);

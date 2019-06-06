@@ -17,10 +17,10 @@ import android.os.IBinder;
 
 public class TrackingService extends Service {
 
-    Model m;
+    public Model m;
 
-    private LocationManager locationManager;
-    private LocationListener locationListener;
+    public LocationManager locationManager;
+    public LocationListener locationListener;
 
     @Override
     public void onCreate() {

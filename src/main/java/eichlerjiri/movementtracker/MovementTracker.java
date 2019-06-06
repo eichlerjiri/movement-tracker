@@ -24,11 +24,11 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.Exporter;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
@@ -36,25 +36,26 @@ import eichlerjiri.movementtracker.ui.TrackerMap;
 
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
+import static java.lang.Math.*;
 
 public class MovementTracker extends Activity {
 
-    private Model m;
+    public Model m;
 
-    private ActionBar actionBar;
-    ActionBar.Tab recordingTab;
-    ActionBar.Tab historyTab;
-    LinearLayout recordingView;
-    private RelativeLayout historyView;
+    public ActionBar actionBar;
+    public ActionBar.Tab recordingTab;
+    public ActionBar.Tab historyTab;
+    public LinearLayout recordingView;
+    public RelativeLayout historyView;
 
-    private TextView recordingText;
-    private ListView historyList;
+    public TextView recordingText;
+    public ListView historyList;
 
-    private final ArrayList<MovementTypeButton> buttons = new ArrayList<>();
+    public final ObjectList<MovementTypeButton> buttons = new ObjectList<>(MovementTypeButton.class);
 
-    private TrackerMap map;
+    public TrackerMap map;
 
-    private final ServiceConnection serviceConnection = new ServiceConnection() {
+    public final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
         }
@@ -63,12 +64,12 @@ public class MovementTracker extends Activity {
         public void onServiceDisconnected(ComponentName name) {
         }
     };
-    private boolean serviceBound;
+    public boolean serviceBound;
 
-    String formatClicked;
+    public String formatClicked;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         m = Model.getInstance(this);
         m.registerMovementTracker(this);
@@ -82,7 +83,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = Math.round(4 * spSize(this));
+        int padding = round(4 * spSize(this));
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));
@@ -98,7 +99,8 @@ public class MovementTracker extends Activity {
         buttonsLayout.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        for (MovementTypeButton button : buttons) {
+        for (int i = 0; i < buttons.size; i++) {
+            MovementTypeButton button = buttons.data[i];
             button.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
             buttonsLayout.addView(button);
         }
@@ -153,7 +155,7 @@ public class MovementTracker extends Activity {
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
         m.unregisterMovementTracker(this);
 
@@ -165,13 +167,13 @@ public class MovementTracker extends Activity {
     }
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
         m.startedMovementTracker(this);
     }
 
     @Override
-    protected void onStop() {
+    public void onStop() {
         super.onStop();
         m.stoppedMovementTracker(this);
     }
@@ -217,14 +219,14 @@ public class MovementTracker extends Activity {
         outState.putBundle("map", map.saveInstanceState());
     }
 
-    private void initTrackingService() {
+    public void initTrackingService() {
         Intent intent = new Intent(this, TrackingService.class);
         startService(intent);
         bindService(intent, serviceConnection, 0);
         serviceBound = true;
     }
 
-    private void updateText() {
+    public void updateText() {
         String text = "GPS: ";
 
         Location l = m.lastLocation;
@@ -258,7 +260,7 @@ public class MovementTracker extends Activity {
         recordingText.setText(text);
     }
 
-    View prepareHistoryView() {
+    public View prepareHistoryView() {
         if (historyView == null) {
             historyView = new RelativeLayout(this);
 
@@ -288,7 +290,7 @@ public class MovementTracker extends Activity {
         return historyView;
     }
 
-    private Button prepareExportButton(final String format) {
+    public Button prepareExportButton(final String format) {
         Button exportButton = new Button(this);
         exportButton.setText("Export " + format.toUpperCase(Locale.US));
         exportButton.setOnClickListener(new View.OnClickListener() {
@@ -306,7 +308,7 @@ public class MovementTracker extends Activity {
         return exportButton;
     }
 
-    void showDateExportSelector(final String format) {
+    public void showDateExportSelector(final String format) {
         GregorianCalendar cal = new GregorianCalendar();
 
         DatePickerDialog dialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
@@ -326,10 +328,10 @@ public class MovementTracker extends Activity {
             return;
         }
 
-        final ArrayList<HistoryRow> historyItems = m.database.getHistory();
-        String[] items = new String[historyItems.size()];
+        final ObjectList<HistoryRow> historyItems = m.database.getHistory();
+        String[] items = new String[historyItems.size];
         for (int i = 0; i < items.length; i++) {
-            HistoryRow item = historyItems.get(i);
+            HistoryRow item = historyItems.data[i];
             items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTime(item.ts);
         }
 
@@ -337,7 +339,7 @@ public class MovementTracker extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MovementTracker.this, MovementDetail.class);
-                intent.putExtra("id", historyItems.get(position).id);
+                intent.putExtra("id", historyItems.data[position].id);
                 startActivity(intent);
             }
         });
@@ -358,8 +360,8 @@ public class MovementTracker extends Activity {
     }
 
     public void recordingStopped() {
-        for (MovementTypeButton button : buttons) {
-            button.resetBackground();
+        for (int i = 0; i < buttons.size; i++) {
+            buttons.data[i].resetBackground();
         }
 
         updateText();

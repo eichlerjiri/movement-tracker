@@ -5,15 +5,14 @@ import android.content.Intent;
 import android.location.Location;
 import android.util.Log;
 
-import java.util.ArrayList;
-
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Model {
 
-    private static Model instance;
+    public static Model instance;
 
     public static Model getInstance(Context c) {
         if (instance == null) {
@@ -25,9 +24,9 @@ public class Model {
     public final Context appContext;
     public final Database database;
 
-    private TrackingService trackingService;
-    private final ArrayList<MovementTracker> movementTrackers = new ArrayList<>();
-    private final ArrayList<MovementTracker> startedMovementTrackers = new ArrayList<>();
+    public TrackingService trackingService;
+    public final ObjectList<MovementTracker> movementTrackers = new ObjectList<>(MovementTracker.class);
+    public final ObjectList<MovementTracker> startedMovementTrackers = new ObjectList<>(MovementTracker.class);
 
     public Location lastKnownLocation;
     public Location lastLocation;
@@ -42,10 +41,10 @@ public class Model {
     public double activeDistance;
     public GeoBoundary activeGeoBoundary;
 
-    private Location lastRecordedLocation;
-    private int notificationCounter;
+    public Location lastRecordedLocation;
+    public int notificationCounter;
 
-    private Model(Context c) {
+    public Model(Context c) {
         appContext = c.getApplicationContext();
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
@@ -85,20 +84,20 @@ public class Model {
         boolean recorded = recordLocation(location, false);
         lastLocation = location;
 
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.lastLocationUpdated(recorded);
+        for (int i = 0; i < movementTrackers.size; i++) {
+            movementTrackers.data[i].lastLocationUpdated(recorded);
         }
     }
 
     public void lastKnownLocationArrived(Location location) {
         lastKnownLocation = location;
 
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.lastKnownLocationUpdated();
+        for (int i = 0; i < movementTrackers.size; i++) {
+            movementTrackers.data[i].lastKnownLocationUpdated();
         }
     }
 
-    private boolean recordLocation(Location location, boolean last) {
+    public boolean recordLocation(Location location, boolean last) {
         if (activeRecordingType.isEmpty()) {
             return false;
         }
@@ -120,7 +119,7 @@ public class Model {
         return false;
     }
 
-    private void doRecordLocation(Location location) {
+    public void doRecordLocation(Location location) {
         long now = System.currentTimeMillis();
 
         // using device-time, not location time
@@ -150,8 +149,8 @@ public class Model {
         if (trackingService != null) {
             trackingService.startRecording();
         }
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.recordingStarted();
+        for (int i = 0; i < movementTrackers.size; i++) {
+            movementTrackers.data[i].recordingStarted();
         }
     }
 
@@ -173,15 +172,15 @@ public class Model {
         if (trackingService != null) {
             trackingService.stopRecording();
         }
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.recordingStopped();
+        for (int i = 0; i < movementTrackers.size; i++) {
+            movementTrackers.data[i].recordingStopped();
         }
     }
 
     public void deleteRecording(long id) {
         database.deleteRecording(id);
-        for (MovementTracker movementTracker : movementTrackers) {
-            movementTracker.reloadHistoryList();
+        for (int i = 0; i < movementTrackers.size; i++) {
+            movementTrackers.data[i].reloadHistoryList();
         }
     }
 
@@ -195,8 +194,8 @@ public class Model {
         refreshReceiving();
     }
 
-    private void refreshReceiving() {
-        boolean requested = !startedMovementTrackers.isEmpty() || !activeRecordingType.isEmpty();
+    public void refreshReceiving() {
+        boolean requested = startedMovementTrackers.size != 0 || !activeRecordingType.isEmpty();
 
         if (requested && !receivingLocations) {
             receivingLocations = true;

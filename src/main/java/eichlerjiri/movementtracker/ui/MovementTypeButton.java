@@ -12,9 +12,9 @@ import eichlerjiri.movementtracker.Model;
 
 public class MovementTypeButton extends Button {
 
-    private final Model m;
-    private final Drawable originalBackground;
-    private final int originalTextColor;
+    public final Model m;
+    public final Drawable originalBackground;
+    public final int originalTextColor;
 
     public MovementTypeButton(Context c, final String movementType) {
         super(c);
@@ -36,7 +36,7 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    void handleClick(final String movementType) {
+    public void handleClick(final String movementType) {
         final String activeRecordingType = m.activeRecordingType;
 
         if (!activeRecordingType.isEmpty()) {
@@ -64,14 +64,14 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    void restartRecording(String movementType, String activeRecordingType, boolean delete) {
+    public void restartRecording(String movementType, String activeRecordingType, boolean delete) {
         m.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
             startRecording(movementType);
         }
     }
 
-    private void startRecording(String movementType) {
+    public void startRecording(String movementType) {
         m.startRecording(movementType);
         setBackgroundColor(Color.GREEN);
         setTextColor(Color.BLACK);

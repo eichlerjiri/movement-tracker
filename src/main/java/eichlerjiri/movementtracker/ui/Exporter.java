@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Database;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.HistoryRow;
@@ -45,7 +46,7 @@ public class Exporter {
         }).start();
     }
 
-    static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
+    public static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -76,7 +77,7 @@ public class Exporter {
         });
     }
 
-    private static int doExport(Context c, File docsDir, long sinceTs, String format) throws IOException {
+    public static int doExport(Context c, File docsDir, long sinceTs, String format) throws IOException {
         BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), "UTF-8"));
         try {
             if ("tcx".equals(format)) {
@@ -93,7 +94,7 @@ public class Exporter {
         }
     }
 
-    private static int doWriteTCX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+    public static int doWriteTCX(Database d, long sinceTs, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         w.write("<TrainingCenterDatabase" +
                 " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +
@@ -104,8 +105,10 @@ public class Exporter {
 
         SimpleDateFormat utcFormatter = utcFormatter();
 
-        int cnt = 0;
-        for (HistoryRow row : d.getHistorySince(sinceTs)) {
+        ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
+        for (int i = 0; i < rows.size; i++) {
+            HistoryRow row = rows.data[i];
+
             String type = "";
             if ("walk".equals(row.movementType)) {
                 type = "Walking";
@@ -121,7 +124,10 @@ public class Exporter {
             w.write("<Lap>\n");
             w.write("<Track>\n");
 
-            for (LocationRow loc : d.getLocations(row.id)) {
+            ObjectList<LocationRow> locs = d.getLocations(row.id);
+            for (int j = 0; j < locs.size; j++) {
+                LocationRow loc = locs.data[j];
+
                 w.write("<Trackpoint>\n");
                 w.write("<Time>");
                 w.write(utcFormatter.format(new Date(loc.ts)));
@@ -140,17 +146,15 @@ public class Exporter {
             w.write("</Track>\n");
             w.write("</Lap>\n");
             w.write("</Activity>\n");
-
-            cnt++;
         }
 
         w.write("</Activities>\n");
         w.write("</TrainingCenterDatabase>\n");
 
-        return cnt;
+        return rows.size;
     }
 
-    private static int doWriteGPX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+    public static int doWriteGPX(Database d, long sinceTs, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         w.write("<gpx version=\"1.1\"" +
                 " xmlns=\"http://www.topografix.com/GPX/1/1\"" +
@@ -160,8 +164,9 @@ public class Exporter {
 
         SimpleDateFormat utcFormatter = utcFormatter();
 
-        int cnt = 0;
-        for (HistoryRow row : d.getHistorySince(sinceTs)) {
+        ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
+        for (int i = 0; i < rows.size; i++) {
+            HistoryRow row = rows.data[i];
             String type = "";
             if ("walk".equals(row.movementType)) {
                 type = "Walking";
@@ -177,7 +182,10 @@ public class Exporter {
             w.write("</type>\n");
             w.write("<trkseg>\n");
 
-            for (LocationRow loc : d.getLocations(row.id)) {
+            ObjectList<LocationRow> locs = d.getLocations(row.id);
+            for (int j = 0; j < locs.size; j++) {
+                LocationRow loc = locs.data[j];
+
                 w.write("<trkpt lat=\"");
                 w.write(Double.toString(loc.lat));
                 w.write("\" lon=\"");
@@ -191,16 +199,14 @@ public class Exporter {
 
             w.write("</trkseg>\n");
             w.write("</trk>\n");
-
-            cnt++;
         }
 
         w.write("</gpx>\n");
 
-        return cnt;
+        return rows.size;
     }
 
-    private static SimpleDateFormat utcFormatter() {
+    public static SimpleDateFormat utcFormatter() {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         return formatter;

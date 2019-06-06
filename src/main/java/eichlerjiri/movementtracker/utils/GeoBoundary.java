@@ -1,5 +1,7 @@
 package eichlerjiri.movementtracker.utils;
 
+import static java.lang.Math.*;
+
 public class GeoBoundary {
 
     public double minX = Double.POSITIVE_INFINITY;
@@ -18,9 +20,9 @@ public class GeoBoundary {
     }
 
     public void addPoint(double x, double y) {
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
+        minX = min(minX, x);
+        maxX = max(maxX, x);
+        minY = min(minY, y);
+        maxY = max(maxY, y);
     }
 }

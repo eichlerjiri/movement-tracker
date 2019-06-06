@@ -4,10 +4,9 @@ import android.content.Context;
 import android.location.Location;
 import android.view.ViewTreeObserver;
 
-import java.util.ArrayList;
-
 import eichlerjiri.mapcomponent.MapComponent;
-import eichlerjiri.mapcomponent.utils.DoubleArrayList;
+import eichlerjiri.mapcomponent.utils.DoubleList;
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
@@ -16,14 +15,14 @@ import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class TrackerMap extends MapComponent {
 
-    private final Model m;
+    public final Model m;
 
-    private boolean startDisplayed;
-    private DoubleArrayList pathPositions = new DoubleArrayList();
+    public boolean startDisplayed;
+    public DoubleList pathPositions = new DoubleList();
 
     public boolean donePositionInit;
 
-    public TrackerMap(Context c, ArrayList<String> mapUrls) {
+    public TrackerMap(Context c, ObjectList<String> mapUrls) {
         super(c, mapUrls);
         m = Model.getInstance(c);
 
@@ -32,15 +31,15 @@ public class TrackerMap extends MapComponent {
         }
 
         if (!m.activeRecordingType.isEmpty()) {
-            ArrayList<LocationRow> locs = m.database.getLocations(m.activeRecording);
-
-            for (LocationRow row : locs) {
+            ObjectList<LocationRow> locs = m.database.getLocations(m.activeRecording);
+            for (int i = 0; i < locs.size; i++) {
+                LocationRow row = locs.data[i];
                 pathPositions.add(lonToMercatorX(row.lon), latToMercatorY(row.lat));
             }
             setPath(pathPositions.data, 0, pathPositions.size);
 
-            if (!locs.isEmpty()) {
-                LocationRow first = locs.get(0);
+            if (locs.size != 0) {
+                LocationRow first = locs.data[0];
                 setStartPosition(lonToMercatorX(first.lon), latToMercatorY(first.lat));
                 startDisplayed = true;
             }
@@ -128,7 +127,7 @@ public class TrackerMap extends MapComponent {
     }
 
     public void recordingStopped() {
-        pathPositions = new DoubleArrayList();
+        pathPositions = new DoubleList();
         setPath(null, 0, 0);
 
         setStartPosition(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);

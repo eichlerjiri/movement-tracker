@@ -11,34 +11,34 @@ import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-
 import eichlerjiri.mapcomponent.MapComponent;
-import eichlerjiri.mapcomponent.utils.DoubleArrayList;
+import eichlerjiri.mapcomponent.utils.DoubleList;
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
+import static java.lang.Math.*;
 
 public class MovementDetail extends Activity {
 
-    private Model m;
-    private HistoryRow recording;
-    private MapComponent map;
-    private GeoBoundary geoBoundary;
+    public Model m;
+    public HistoryRow recording;
+    public MapComponent map;
+    public GeoBoundary geoBoundary;
 
-    boolean donePositionInit;
+    public boolean donePositionInit;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         m = Model.getInstance(this);
 
         TextView detailText = new TextView(this);
 
-        int padding = Math.round(4 * spSize(this));
+        int padding = round(4 * spSize(this));
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);
@@ -78,11 +78,11 @@ public class MovementDetail extends Activity {
 
         boolean sameDay = isSameDay(from, to);
 
-        ArrayList<LocationRow> locations = m.database.getLocations(recording.id);
+        ObjectList<LocationRow> locations = m.database.getLocations(recording.id);
 
         String text = "from " + formatDateTime(from) +
                 " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
-                "locations: " + locations.size() + "\n" +
+                "locations: " + locations.size + "\n" +
                 "duration: " + formatDuration(duration) + "\n" +
                 "distance: " + formatDistance(distance);
 
@@ -97,7 +97,7 @@ public class MovementDetail extends Activity {
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
 
         map.close();
@@ -140,7 +140,7 @@ public class MovementDetail extends Activity {
         outState.putBundle("map", map.saveInstanceState());
     }
 
-    private HistoryRow getHistoryItem() {
+    public HistoryRow getHistoryItem() {
         Bundle b = getIntent().getExtras();
         if (b != null) {
             long id = b.getLong("id");
@@ -151,20 +151,21 @@ public class MovementDetail extends Activity {
         return null;
     }
 
-    private void drawLine(ArrayList<LocationRow> locations) {
-        if (locations.isEmpty()) {
+    public void drawLine(ObjectList<LocationRow> locations) {
+        if (locations.size == 0) {
             return;
         }
 
-        LocationRow start = locations.get(0);
+        LocationRow start = locations.data[0];
         map.setStartPosition(lonToMercatorX(start.lon), latToMercatorY(start.lat));
 
-        LocationRow end = locations.get(locations.size() - 1);
+        LocationRow end = locations.data[locations.size - 1];
         map.setEndPosition(lonToMercatorX(end.lon), latToMercatorY(end.lat));
 
-        DoubleArrayList positions = new DoubleArrayList();
+        DoubleList positions = new DoubleList();
         geoBoundary = new GeoBoundary();
-        for (LocationRow row : locations) {
+        for (int i = 0; i < locations.size; i++) {
+            LocationRow row = locations.data[i];
             double x = lonToMercatorX(row.lon);
             double y = latToMercatorY(row.lat);
 
@@ -186,12 +187,12 @@ public class MovementDetail extends Activity {
         });
     }
 
-    void doCenterMap() {
+    public void doCenterMap() {
         map.moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, 18, 30);
         map.commit();
     }
 
-    void confirmDeleteRecording() {
+    public void confirmDeleteRecording() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setMessage("Really delete recording?")
                 .setTitle("Delete recording?");
@@ -208,7 +209,7 @@ public class MovementDetail extends Activity {
         alertDialog.show();
     }
 
-    void doDeleteRecording() {
+    public void doDeleteRecording() {
         m.deleteRecording(recording.id);
         finish();
     }

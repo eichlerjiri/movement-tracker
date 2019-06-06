@@ -8,14 +8,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import java.util.ArrayList;
-
+import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 
 public class Database {
 
-    private final SQLiteDatabase d;
+    public final SQLiteDatabase d;
 
     public Database(Context c) {
         d = new SQLiteOpenHelper(c, "movement-tracker", null, 1) {
@@ -31,7 +30,7 @@ public class Database {
         }.getWritableDatabase();
     }
 
-    static void createDatabase(SQLiteDatabase sqlite) {
+    public static void createDatabase(SQLiteDatabase sqlite) {
         execSQL(sqlite, "CREATE TABLE recording(id INTEGER PRIMARY KEY," +
                 "ts INTEGER," +
                 "ts_end INTEGER," +
@@ -50,7 +49,7 @@ public class Database {
         execSQL(sqlite, "CREATE INDEX location_recording_ts ON location(id_recording,ts)");
     }
 
-    static void upgradeDatabase(int oldVersion, int newVersion) {
+    public static void upgradeDatabase(int oldVersion, int newVersion) {
         Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
     }
 
@@ -84,8 +83,8 @@ public class Database {
         delete(d, "recording", "id=?", new String[]{String.valueOf(id)});
     }
 
-    private ArrayList<HistoryRow> prepareHistory(String selection, String[] selectionArgs, String orderBy) {
-        ArrayList<HistoryRow> ret = new ArrayList<>();
+    public ObjectList<HistoryRow> prepareHistory(String selection, String[] selectionArgs, String orderBy) {
+        ObjectList<HistoryRow> ret = new ObjectList<>(HistoryRow.class);
 
         Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
                 selection, selectionArgs, null, null, orderBy);
@@ -97,24 +96,24 @@ public class Database {
         return ret;
     }
 
-    public ArrayList<HistoryRow> getHistory() {
+    public ObjectList<HistoryRow> getHistory() {
         return prepareHistory("ts_end<>0", null, "ts DESC,id");
     }
 
-    public ArrayList<HistoryRow> getHistorySince(long ts) {
+    public ObjectList<HistoryRow> getHistorySince(long ts) {
         return prepareHistory("ts_end<>0 AND ts>=?", new String[]{String.valueOf(ts)}, "ts,id");
     }
 
     public HistoryRow getHistoryItem(long id) {
-        ArrayList<HistoryRow> rows = prepareHistory("ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null);
-        if (rows.isEmpty()) {
+        ObjectList<HistoryRow> rows = prepareHistory("ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null);
+        if (rows.size == 0) {
             return null;
         }
-        return rows.get(0);
+        return rows.data[0];
     }
 
-    public ArrayList<LocationRow> getLocations(long idRecording) {
-        ArrayList<LocationRow> ret = new ArrayList<>();
+    public ObjectList<LocationRow> getLocations(long idRecording) {
+        ObjectList<LocationRow> ret = new ObjectList<>(LocationRow.class);
 
         Cursor c = query(d, "location", new String[]{"ts", "lat", "lon"}, "id_recording=?",
                 new String[]{String.valueOf(idRecording)}, null, null, "ts,id");
@@ -126,7 +125,7 @@ public class Database {
         return ret;
     }
 
-    private static void execSQL(SQLiteDatabase sqlite, String sql) {
+    public static void execSQL(SQLiteDatabase sqlite, String sql) {
         try {
             sqlite.execSQL(sql);
         } catch (SQLException e) {
@@ -134,7 +133,7 @@ public class Database {
         }
     }
 
-    private static long insert(SQLiteDatabase sqlite, String table, ContentValues values) {
+    public static long insert(SQLiteDatabase sqlite, String table, ContentValues values) {
         try {
             return sqlite.insertOrThrow(table, null, values);
         } catch (SQLException e) {
@@ -142,7 +141,7 @@ public class Database {
         }
     }
 
-    private static int update(SQLiteDatabase sqlite, String table, ContentValues values,
+    public static int update(SQLiteDatabase sqlite, String table, ContentValues values,
             String where, String[] whereValues) {
         try {
             return sqlite.update(table, values, where, whereValues);
@@ -151,7 +150,7 @@ public class Database {
         }
     }
 
-    private static int delete(SQLiteDatabase sqlite, String table, String where, String[] whereValues) {
+    public static int delete(SQLiteDatabase sqlite, String table, String where, String[] whereValues) {
         try {
             return sqlite.delete(table, where, whereValues);
         } catch (SQLException e) {
@@ -159,7 +158,7 @@ public class Database {
         }
     }
 
-    private static Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
+    public static Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
             String[] selectionArgs, String groupBy, String having, String orderBy) {
         try {
             return sqlite.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
