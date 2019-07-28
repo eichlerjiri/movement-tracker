@@ -29,24 +29,35 @@ import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Exporter {
 
-    public static void exportTracks(final Context c, final long sinceTs, final String format) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(c)
-                .setMessage("Please wait")
-                .setTitle("Exporting " + format.toUpperCase(Locale.US));
+    public final Context c;
+    public final long sinceTs;
+    public final String format;
 
-        final AlertDialog alertDialog = builder.create();
-        alertDialog.setCancelable(false);
-        alertDialog.show();
+    public AlertDialog alertDialog;
+    public String res;
+
+    public Exporter(Context c, long sinceTs, String format) {
+        this.c = c;
+        this.sinceTs = sinceTs;
+        this.format = format;
+    }
+
+    public void exportTracks() {
+        alertDialog = new AlertDialog.Builder(c)
+                .setMessage("Please wait")
+                .setTitle("Exporting " + format.toUpperCase(Locale.US))
+                .setCancelable(false)
+                .show();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                threaded(c, alertDialog, sinceTs, format);
+                threaded();
             }
         }).start();
     }
 
-    public static void threaded(final Context c, final AlertDialog alertDialog, long sinceTs, String format) {
+    public void threaded() {
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -58,32 +69,30 @@ public class Exporter {
 
         String filename = "MovementTracker " + formatDateTimeISO(System.currentTimeMillis()) + "." + format;
 
-        String res;
         try {
-            int cnt = doExport(c, new File(docsDir, filename), sinceTs, format);
+            int cnt = doExport(new File(docsDir, filename));
             res = "Exported " + cnt + " recordings to " + dirLocs + "/" + filename;
         } catch (IOException e) {
             Log.e("Exporter", "Export failed", e);
             res = "Export failed: " + e.getMessage();
         }
-        final String ress = res;
 
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
                 alertDialog.hide();
-                Toast.makeText(c, ress, Toast.LENGTH_LONG).show();
+                Toast.makeText(c, res, Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    public static int doExport(Context c, File docsDir, long sinceTs, String format) throws IOException {
+    public int doExport(File docsDir) throws IOException {
         BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), "UTF-8"));
         try {
             if ("tcx".equals(format)) {
-                return doWriteTCX(Model.getInstance(c).database, sinceTs, w);
+                return doWriteTCX(Model.getInstance(c).database, w);
             } else {
-                return doWriteGPX(Model.getInstance(c).database, sinceTs, w);
+                return doWriteGPX(Model.getInstance(c).database, w);
             }
         } finally {
             try {
@@ -94,7 +103,7 @@ public class Exporter {
         }
     }
 
-    public static int doWriteTCX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+    public int doWriteTCX(Database d, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         w.write("<TrainingCenterDatabase" +
                 " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +
@@ -154,7 +163,7 @@ public class Exporter {
         return rows.size;
     }
 
-    public static int doWriteGPX(Database d, long sinceTs, BufferedWriter w) throws IOException {
+    public int doWriteGPX(Database d, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         w.write("<gpx version=\"1.1\"" +
                 " xmlns=\"http://www.topografix.com/GPX/1/1\"" +

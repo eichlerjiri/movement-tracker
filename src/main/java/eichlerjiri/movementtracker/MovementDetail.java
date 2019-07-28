@@ -193,20 +193,17 @@ public class MovementDetail extends Activity {
     }
 
     public void confirmDeleteRecording() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setMessage("Really delete recording?")
-                .setTitle("Delete recording?");
-
-        AlertDialog alertDialog = builder.create();
-        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Yes",
-                new DialogInterface.OnClickListener() {
+                .setTitle("Delete recording?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         doDeleteRecording();
                     }
-                });
-        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
-        alertDialog.show();
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 
     public void doDeleteRecording() {

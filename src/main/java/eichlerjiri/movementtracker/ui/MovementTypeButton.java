@@ -13,12 +13,14 @@ import eichlerjiri.movementtracker.Model;
 public class MovementTypeButton extends Button {
 
     public final Model m;
+    public final String movementType;
     public final Drawable originalBackground;
     public final int originalTextColor;
 
-    public MovementTypeButton(Context c, final String movementType) {
+    public MovementTypeButton(Context c, String movementType) {
         super(c);
         m = Model.getInstance(c);
+        this.movementType = movementType;
 
         originalBackground = getBackground();
         originalTextColor = getCurrentTextColor();
@@ -27,7 +29,7 @@ public class MovementTypeButton extends Button {
         setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleClick(movementType);
+                handleClick();
             }
         });
 
@@ -36,42 +38,38 @@ public class MovementTypeButton extends Button {
         }
     }
 
-    public void handleClick(final String movementType) {
-        final String activeRecordingType = m.activeRecordingType;
-
-        if (!activeRecordingType.isEmpty()) {
+    public void handleClick() {
+        if (!m.activeRecordingType.isEmpty()) {
             if (m.activeLocations < 2) {
-                restartRecording(movementType, activeRecordingType, true);
+                restartRecording(true);
                 return;
             }
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext())
-                    .setMessage("Really stop " + activeRecordingType + " recording?")
-                    .setTitle("Stop recording?");
-
-            AlertDialog alertDialog = builder.create();
-            alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Yes",
-                    new DialogInterface.OnClickListener() {
+            new AlertDialog.Builder(getContext())
+                    .setMessage("Really stop " + m.activeRecordingType + " recording?")
+                    .setTitle("Stop recording?")
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            restartRecording(movementType, activeRecordingType, false);
+                            restartRecording(false);
                         }
-                    });
-            alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "No", (DialogInterface.OnClickListener) null);
-            alertDialog.show();
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
         } else {
-            startRecording(movementType);
+            startRecording();
         }
     }
 
-    public void restartRecording(String movementType, String activeRecordingType, boolean delete) {
+    public void restartRecording(boolean delete) {
+        String activeRecordingType = m.activeRecordingType;
         m.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
-            startRecording(movementType);
+            startRecording();
         }
     }
 
-    public void startRecording(String movementType) {
+    public void startRecording() {
         m.startRecording(movementType);
         setBackgroundColor(Color.GREEN);
         setTextColor(Color.BLACK);
