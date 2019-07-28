@@ -10,7 +10,6 @@ import android.widget.Button;
 import android.widget.DatePicker;
 
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import eichlerjiri.movementtracker.MovementTracker;
@@ -40,12 +39,12 @@ public class ExportButton extends Button {
     }
 
     public void showDateExportSelector() {
-        GregorianCalendar cal = new GregorianCalendar();
-
+        Calendar cal = Calendar.getInstance();
         DatePickerDialog dialog = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                GregorianCalendar c = new GregorianCalendar(year, month, dayOfMonth);
+                Calendar c = Calendar.getInstance();
+                c.set(year, month, dayOfMonth);
                 new Exporter(getContext(), c.getTimeInMillis(), format).exportTracks();
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));

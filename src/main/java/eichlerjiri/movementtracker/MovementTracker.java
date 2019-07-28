@@ -225,9 +225,9 @@ public class MovementTracker extends Activity {
 
         Location l = m.lastLocation;
         if (l != null) {
-            text += formatCoord(l.getLatitude()) +
-                    " " + formatCoord(l.getLongitude()) +
-                    " " + formatAccuracy(l.getAccuracy());
+            text += m.ft.formatCoord(l.getLatitude()) +
+                    " " + m.ft.formatCoord(l.getLongitude()) +
+                    " " + m.ft.formatAccuracy(l.getAccuracy());
         } else {
             text += "no location";
         }
@@ -237,17 +237,17 @@ public class MovementTracker extends Activity {
             long to = m.activeTsTo;
             long duration = to - from;
 
-            boolean sameDay = isSameDay(from, to);
+            boolean sameDay = m.ft.isSameDay(from, to);
 
-            text += "\nfrom " + formatDateTime(from) +
-                    " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
+            text += "\nfrom " + m.ft.formatDateTime(from) +
+                    " to " + (sameDay ? m.ft.formatTime(to) : m.ft.formatDateTime(to)) + "\n" +
                     "locations: " + m.activeLocations + "\n" +
-                    "duration: " + formatDuration(duration) + "\n" +
-                    "distance: " + formatDistance(m.activeDistance);
+                    "duration: " + m.ft.formatDuration(duration) + "\n" +
+                    "distance: " + m.ft.formatDistance(m.activeDistance);
 
             double avgSpeed = avgSpeed(m.activeDistance, duration);
             if (avgSpeed != 0.0) {
-                text += "\navg. speed: " + formatSpeed(avgSpeed);
+                text += "\navg. speed: " + m.ft.formatSpeed(avgSpeed);
             }
         }
 
@@ -293,7 +293,8 @@ public class MovementTracker extends Activity {
         String[] items = new String[historyItems.size];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.data[i];
-            items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTime(item.ts);
+            items[i] = m.ft.formatDistance(item.distance) + " " + item.movementType
+                    + " " + m.ft.formatDateTime(item.ts);
         }
 
         historyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

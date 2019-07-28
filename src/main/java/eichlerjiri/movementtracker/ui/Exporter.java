@@ -14,18 +14,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Database;
 import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-
-import static eichlerjiri.movementtracker.utils.Common.*;
+import eichlerjiri.movementtracker.utils.FormatTools;
 
 public class Exporter {
 
@@ -34,6 +30,7 @@ public class Exporter {
     public final String format;
 
     public AlertDialog alertDialog;
+    public FormatTools ft;
     public String res;
 
     public Exporter(Context c, long sinceTs, String format) {
@@ -58,6 +55,8 @@ public class Exporter {
     }
 
     public void threaded() {
+        ft = new FormatTools();
+
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -67,7 +66,7 @@ public class Exporter {
         File docsDir = Environment.getExternalStoragePublicDirectory(dirLocs);
         docsDir.mkdirs();
 
-        String filename = "MovementTracker " + formatDateTimeISO(System.currentTimeMillis()) + "." + format;
+        String filename = "MovementTracker " + ft.formatDateTimeISO(System.currentTimeMillis()) + "." + format;
 
         try {
             int cnt = doExport(new File(docsDir, filename));
@@ -112,8 +111,6 @@ public class Exporter {
                 " http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd\">\n");
         w.write("<Activities>\n");
 
-        SimpleDateFormat utcFormatter = utcFormatter();
-
         ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
         for (int i = 0; i < rows.size; i++) {
             HistoryRow row = rows.data[i];
@@ -139,7 +136,7 @@ public class Exporter {
 
                 w.write("<Trackpoint>\n");
                 w.write("<Time>");
-                w.write(utcFormatter.format(new Date(loc.ts)));
+                w.write(ft.formatDateTimeUTC(loc.ts));
                 w.write("</Time>\n");
                 w.write("<Position>\n");
                 w.write("<LatitudeDegrees>");
@@ -171,8 +168,6 @@ public class Exporter {
                 " xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1" +
                 " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
 
-        SimpleDateFormat utcFormatter = utcFormatter();
-
         ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
         for (int i = 0; i < rows.size; i++) {
             HistoryRow row = rows.data[i];
@@ -201,7 +196,7 @@ public class Exporter {
                 w.write(Double.toString(loc.lon));
                 w.write("\">\n");
                 w.write("<time>");
-                w.write(utcFormatter.format(new Date(loc.ts)));
+                w.write(ft.formatDateTimeUTC(loc.ts));
                 w.write("</time>\n");
                 w.write("</trkpt>\n");
             }
@@ -213,11 +208,5 @@ public class Exporter {
         w.write("</gpx>\n");
 
         return rows.size;
-    }
-
-    public static SimpleDateFormat utcFormatter() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return formatter;
     }
 }

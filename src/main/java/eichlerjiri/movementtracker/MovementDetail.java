@@ -76,19 +76,19 @@ public class MovementDetail extends Activity {
         long duration = to - from;
         double distance = recording.distance;
 
-        boolean sameDay = isSameDay(from, to);
+        boolean sameDay = m.ft.isSameDay(from, to);
 
         ObjectList<LocationRow> locations = m.database.getLocations(recording.id);
 
-        String text = "from " + formatDateTime(from) +
-                " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n" +
+        String text = "from " + m.ft.formatDateTime(from) +
+                " to " + (sameDay ? m.ft.formatTime(to) : m.ft.formatDateTime(to)) + "\n" +
                 "locations: " + locations.size + "\n" +
-                "duration: " + formatDuration(duration) + "\n" +
-                "distance: " + formatDistance(distance);
+                "duration: " + m.ft.formatDuration(duration) + "\n" +
+                "distance: " + m.ft.formatDistance(distance);
 
         double avgSpeed = avgSpeed(distance, duration);
         if (avgSpeed != 0.0) {
-            text += "\navg. speed: " + formatSpeed(avgSpeed);
+            text += "\navg. speed: " + m.ft.formatSpeed(avgSpeed);
         }
 
         detailText.setText(text);
