@@ -265,8 +265,8 @@ public class MovementTracker extends Activity {
 
             LinearLayout exportButtonLayout = new LinearLayout(this);
             exportButtonLayout.setOrientation(LinearLayout.VERTICAL);
-            exportButtonLayout.addView(new ExportButton(this, "tcx"));
-            exportButtonLayout.addView(new ExportButton(this, "gpx"));
+            exportButtonLayout.addView(new ExportButton(this, "tcx", "TCX"));
+            exportButtonLayout.addView(new ExportButton(this, "gpx", "GPX"));
 
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));

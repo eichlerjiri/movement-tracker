@@ -17,12 +17,14 @@ import eichlerjiri.movementtracker.MovementTracker;
 public class ExportButton extends Button {
 
     public final String format;
+    public final String formatTitle;
 
-    public ExportButton(Context c, String format) {
+    public ExportButton(Context c, String format, String formatTitle) {
         super(c);
         this.format = format;
+        this.formatTitle = formatTitle;
 
-        setText("Export " + format.toUpperCase(Locale.US));
+        setText("Export " + formatTitle);
         setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -39,13 +41,13 @@ public class ExportButton extends Button {
     }
 
     public void showDateExportSelector() {
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(Locale.US);
         DatePickerDialog dialog = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                 Calendar c = Calendar.getInstance();
                 c.set(year, month, dayOfMonth);
-                new Exporter(getContext(), c.getTimeInMillis(), format).exportTracks();
+                new Exporter(getContext(), c.getTimeInMillis(), format, formatTitle).exportTracks();
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
 

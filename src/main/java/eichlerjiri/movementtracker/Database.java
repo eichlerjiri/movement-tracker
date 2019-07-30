@@ -12,6 +12,8 @@ import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 
+import static eichlerjiri.movementtracker.utils.Common.*;
+
 public class Database {
 
     public final SQLiteDatabase d;
@@ -28,6 +30,8 @@ public class Database {
                 upgradeDatabase(oldVersion, newVersion);
             }
         }.getWritableDatabase();
+
+        finishLastRecording();
     }
 
     public static void createDatabase(SQLiteDatabase sqlite) {
@@ -51,6 +55,31 @@ public class Database {
 
     public static void upgradeDatabase(int oldVersion, int newVersion) {
         Log.w("Database", "Unknown database upgrade. From: " + oldVersion + " to: " + newVersion);
+    }
+
+    public void finishLastRecording() {
+        Cursor c = query(d, "recording", new String[]{"id", "ts_end"}, null, null, null, null, "id DESC", "1");
+        if (c.moveToNext()) {
+            long id = c.getLong(0);
+            long tsEnd = c.getLong(1);
+            if (tsEnd == 0) {
+                ObjectList<LocationRow> locs = getLocations(id);
+                if (locs.size < 2) {
+                    Log.i("Database", "Deleting " + id);
+                    deleteRecording(id);
+                } else {
+                    long distance = 0;
+                    for (int i = 1; i < locs.size; i++) {
+                        LocationRow row1 = locs.data[i - 1];
+                        LocationRow row2 = locs.data[i];
+                        distance += distance(row1.lat, row1.lon, row2.lat, row2.lon);
+                    }
+                    Log.i("Database", "Finishing " + id);
+                    finishRecording(locs.data[locs.size - 1].ts, id, distance);
+                }
+            }
+        }
+        c.close();
     }
 
     public void saveLocation(long idRecording, long timestamp, double lat, double lon) {
@@ -87,7 +116,7 @@ public class Database {
         ObjectList<HistoryRow> ret = new ObjectList<>(HistoryRow.class);
 
         Cursor c = query(d, "recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
-                selection, selectionArgs, null, null, orderBy);
+                selection, selectionArgs, null, null, orderBy, null);
         while (c.moveToNext()) {
             ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
         }
@@ -116,7 +145,7 @@ public class Database {
         ObjectList<LocationRow> ret = new ObjectList<>(LocationRow.class);
 
         Cursor c = query(d, "location", new String[]{"ts", "lat", "lon"}, "id_recording=?",
-                new String[]{String.valueOf(idRecording)}, null, null, "ts,id");
+                new String[]{String.valueOf(idRecording)}, null, null, "ts,id", null);
         while (c.moveToNext()) {
             ret.add(new LocationRow(c.getLong(0), c.getDouble(1), c.getDouble(2)));
         }
@@ -159,9 +188,9 @@ public class Database {
     }
 
     public static Cursor query(SQLiteDatabase sqlite, String table, String[] columns, String selection,
-            String[] selectionArgs, String groupBy, String having, String orderBy) {
+            String[] selectionArgs, String groupBy, String having, String orderBy, String limit) {
         try {
-            return sqlite.query(table, columns, selection, selectionArgs, groupBy, having, orderBy);
+            return sqlite.query(table, columns, selection, selectionArgs, groupBy, having, orderBy, limit);
         } catch (SQLException e) {
             throw new Error(e);
         }

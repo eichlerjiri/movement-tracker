@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Locale;
 
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Database;
@@ -28,21 +27,23 @@ public class Exporter {
     public final Context c;
     public final long sinceTs;
     public final String format;
+    public final String formatTitle;
 
     public AlertDialog alertDialog;
     public FormatTools ft;
     public String res;
 
-    public Exporter(Context c, long sinceTs, String format) {
+    public Exporter(Context c, long sinceTs, String format, String formatTitle) {
         this.c = c;
         this.sinceTs = sinceTs;
         this.format = format;
+        this.formatTitle = formatTitle;
     }
 
     public void exportTracks() {
         alertDialog = new AlertDialog.Builder(c)
                 .setMessage("Please wait")
-                .setTitle("Exporting " + format.toUpperCase(Locale.US))
+                .setTitle("Exporting " + formatTitle)
                 .setCancelable(false)
                 .show();
 
