@@ -1,5 +1,6 @@
 package eichlerjiri.movementtracker;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -11,31 +12,21 @@ import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 import static eichlerjiri.movementtracker.utils.Common.*;
 
-public class Model {
+public class App extends Application {
 
-    public static Model instance;
-
-    public static Model getInstance(Context c) {
-        if (instance == null) {
-            instance = new Model(c);
-        }
-        return instance;
-    }
-
-    public final Context appContext;
     public final Database database;
-    public final FormatTools ft = new FormatTools();
+    public final FormatTools ft;
 
     public TrackingService trackingService;
-    public final ObjectList<MovementTracker> movementTrackers = new ObjectList<>(MovementTracker.class);
-    public final ObjectList<MovementTracker> startedMovementTrackers = new ObjectList<>(MovementTracker.class);
+    public final ObjectList<MovementTracker> movementTrackers;
+    public final ObjectList<MovementTracker> startedMovementTrackers;
 
     public Location lastKnownLocation;
     public Location lastLocation;
     public boolean receivingLocations;
 
     public long activeRecording;
-    public String activeRecordingType = "";
+    public String activeRecordingType;
 
     public long activeTsFrom;
     public long activeTsTo;
@@ -46,24 +37,29 @@ public class Model {
     public Location lastRecordedLocation;
     public int notificationCounter;
 
-    public Model(Context c) {
-        appContext = c.getApplicationContext();
-
+    public App() {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                Log.e("Model", e.getMessage(), e);
+                Log.e("App", e.getMessage(), e);
 
-                Intent intent = new Intent(appContext, ErrorActivity.class);
+                Intent intent = new Intent(App.this, ErrorActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.putExtra("msg", e.getMessage());
-                appContext.startActivity(intent);
+                startActivity(intent);
 
                 System.exit(1);
             }
         });
 
-        database = new Database(c);
+        database = new Database(this);
+        ft = new FormatTools();
+        movementTrackers = new ObjectList<>(MovementTracker.class);
+        startedMovementTrackers = new ObjectList<>(MovementTracker.class);
+    }
+
+    public static App get(Context c) {
+        return (App) c.getApplicationContext();
     }
 
     public void registerTrackingService(TrackingService service) {
@@ -100,7 +96,7 @@ public class Model {
     }
 
     public boolean recordLocation(Location location, boolean last) {
-        if (activeRecordingType.isEmpty()) {
+        if (activeRecordingType == null) {
             return false;
         }
 
@@ -167,7 +163,7 @@ public class Model {
             database.finishRecording(System.currentTimeMillis(), activeRecording, activeDistance);
         }
 
-        activeRecordingType = "";
+        activeRecordingType = null;
 
         refreshReceiving();
 
@@ -197,7 +193,7 @@ public class Model {
     }
 
     public void refreshReceiving() {
-        boolean requested = startedMovementTrackers.size != 0 || !activeRecordingType.isEmpty();
+        boolean requested = startedMovementTrackers.size != 0 || activeRecordingType != null;
 
         if (requested && !receivingLocations) {
             receivingLocations = true;

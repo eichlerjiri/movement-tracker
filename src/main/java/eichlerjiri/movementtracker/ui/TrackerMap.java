@@ -7,7 +7,7 @@ import android.view.ViewTreeObserver;
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
-import eichlerjiri.movementtracker.Model;
+import eichlerjiri.movementtracker.App;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
@@ -15,7 +15,7 @@ import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class TrackerMap extends MapComponent {
 
-    public final Model m;
+    public final App app;
 
     public boolean startDisplayed;
     public DoubleList pathPositions = new DoubleList();
@@ -24,14 +24,14 @@ public class TrackerMap extends MapComponent {
 
     public TrackerMap(Context c, ObjectList<String> mapUrls) {
         super(c, mapUrls);
-        m = Model.getInstance(c);
+        app = App.get(c);
 
-        if (m.lastLocation != null) {
+        if (app.lastLocation != null) {
             updateLocation(false);
         }
 
-        if (!m.activeRecordingType.isEmpty()) {
-            ObjectList<LocationRow> locs = m.database.getLocations(m.activeRecording);
+        if (app.activeRecordingType != null) {
+            ObjectList<LocationRow> locs = app.database.getLocations(app.activeRecording);
             for (int i = 0; i < locs.size; i++) {
                 LocationRow row = locs.data[i];
                 pathPositions.add(lonToMercatorX(row.lon), latToMercatorY(row.lat));
@@ -60,8 +60,8 @@ public class TrackerMap extends MapComponent {
 
     @Override
     public void centerMap() {
-        Location last = m.lastLocation;
-        Location lastKnown = m.lastKnownLocation;
+        Location last = app.lastLocation;
+        Location lastKnown = app.lastKnownLocation;
         double lat;
         double lon;
         float zoom;
@@ -79,8 +79,8 @@ public class TrackerMap extends MapComponent {
             zoom = 4;
         }
 
-        if (!m.activeRecordingType.isEmpty()) {
-            GeoBoundary geoBoundary = new GeoBoundary(m.activeGeoBoundary);
+        if (app.activeRecordingType != null) {
+            GeoBoundary geoBoundary = new GeoBoundary(app.activeGeoBoundary);
             geoBoundary.addPoint(lonToMercatorX(lon), latToMercatorY(lat));
             moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, zoom, 30);
         } else {
@@ -92,7 +92,7 @@ public class TrackerMap extends MapComponent {
     }
 
     public void updateLocation(boolean recorded) {
-        Location l = m.lastLocation;
+        Location l = app.lastLocation;
         double lat = l.getLatitude();
         double lon = l.getLongitude();
 

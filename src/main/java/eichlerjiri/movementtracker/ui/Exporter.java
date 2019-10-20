@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import eichlerjiri.mapcomponent.utils.ObjectList;
+import eichlerjiri.movementtracker.App;
 import eichlerjiri.movementtracker.Database;
-import eichlerjiri.movementtracker.Model;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.FormatTools;
@@ -90,9 +90,9 @@ public class Exporter {
         BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), "UTF-8"));
         try {
             if ("tcx".equals(format)) {
-                return doWriteTCX(Model.getInstance(c).database, w);
+                return doWriteTCX(App.get(c).database, w);
             } else {
-                return doWriteGPX(Model.getInstance(c).database, w);
+                return doWriteGPX(App.get(c).database, w);
             }
         } finally {
             try {

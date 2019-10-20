@@ -8,18 +8,18 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.Button;
 
-import eichlerjiri.movementtracker.Model;
+import eichlerjiri.movementtracker.App;
 
 public class MovementTypeButton extends Button {
 
-    public final Model m;
+    public final App app;
     public final String movementType;
     public final Drawable originalBackground;
     public final int originalTextColor;
 
     public MovementTypeButton(Context c, String movementType) {
         super(c);
-        m = Model.getInstance(c);
+        app = App.get(c);
         this.movementType = movementType;
 
         originalBackground = getBackground();
@@ -33,20 +33,20 @@ public class MovementTypeButton extends Button {
             }
         });
 
-        if (m.activeRecordingType.equals(movementType)) {
+        if (movementType.equals(app.activeRecordingType)) {
             setBackgroundColor(Color.GREEN);
         }
     }
 
     public void handleClick() {
-        if (!m.activeRecordingType.isEmpty()) {
-            if (m.activeLocations < 2) {
+        if (app.activeRecordingType != null) {
+            if (app.activeLocations < 2) {
                 restartRecording(true);
                 return;
             }
 
             new AlertDialog.Builder(getContext())
-                    .setMessage("Really stop " + m.activeRecordingType + " recording?")
+                    .setMessage("Really stop " + app.activeRecordingType + " recording?")
                     .setTitle("Stop recording?")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
@@ -62,15 +62,15 @@ public class MovementTypeButton extends Button {
     }
 
     public void restartRecording(boolean delete) {
-        String activeRecordingType = m.activeRecordingType;
-        m.stopRecording(delete);
+        String activeRecordingType = app.activeRecordingType;
+        app.stopRecording(delete);
         if (!movementType.equals(activeRecordingType)) {
             startRecording();
         }
     }
 
     public void startRecording() {
-        m.startRecording(movementType);
+        app.startRecording(movementType);
         setBackgroundColor(Color.GREEN);
         setTextColor(Color.BLACK);
     }

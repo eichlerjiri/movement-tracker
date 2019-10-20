@@ -24,7 +24,7 @@ import static java.lang.Math.*;
 
 public class MovementDetail extends Activity {
 
-    public Model m;
+    public App app;
     public HistoryRow recording;
     public MapComponent map;
     public GeoBoundary geoBoundary;
@@ -34,7 +34,7 @@ public class MovementDetail extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        m = Model.getInstance(this);
+        app = App.get(this);
 
         TextView detailText = new TextView(this);
 
@@ -76,19 +76,19 @@ public class MovementDetail extends Activity {
         long duration = to - from;
         double distance = recording.distance;
 
-        boolean sameDay = m.ft.isSameDay(from, to);
+        boolean sameDay = app.ft.isSameDay(from, to);
 
-        ObjectList<LocationRow> locations = m.database.getLocations(recording.id);
+        ObjectList<LocationRow> locations = app.database.getLocations(recording.id);
 
-        String text = "from " + m.ft.formatDateTime(from) +
-                " to " + (sameDay ? m.ft.formatTime(to) : m.ft.formatDateTime(to)) + "\n" +
+        String text = "from " + app.ft.formatDateTime(from) +
+                " to " + (sameDay ? app.ft.formatTime(to) : app.ft.formatDateTime(to)) + "\n" +
                 "locations: " + locations.size + "\n" +
-                "duration: " + m.ft.formatDuration(duration) + "\n" +
-                "distance: " + m.ft.formatDistance(distance);
+                "duration: " + app.ft.formatDuration(duration) + "\n" +
+                "distance: " + app.ft.formatDistance(distance);
 
         double avgSpeed = avgSpeed(distance, duration);
         if (avgSpeed != 0.0) {
-            text += "\navg. speed: " + m.ft.formatSpeed(avgSpeed);
+            text += "\navg. speed: " + app.ft.formatSpeed(avgSpeed);
         }
 
         detailText.setText(text);
@@ -145,7 +145,7 @@ public class MovementDetail extends Activity {
         if (b != null) {
             long id = b.getLong("id");
             if (id > 0) {
-                return m.database.getHistoryItem(id);
+                return app.database.getHistoryItem(id);
             }
         }
         return null;
@@ -207,7 +207,7 @@ public class MovementDetail extends Activity {
     }
 
     public void doDeleteRecording() {
-        m.deleteRecording(recording.id);
+        app.deleteRecording(recording.id);
         finish();
     }
 }

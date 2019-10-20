@@ -17,15 +17,15 @@ import android.os.IBinder;
 
 public class TrackingService extends Service {
 
-    public Model m;
+    public App app;
 
     public LocationManager locationManager;
     public LocationListener locationListener;
 
     @Override
     public void onCreate() {
-        m = Model.getInstance(this);
-        m.registerTrackingService(this);
+        app = App.get(this);
+        app.registerTrackingService(this);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) {
@@ -35,7 +35,7 @@ public class TrackingService extends Service {
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                m.locationArrived(location);
+                app.locationArrived(location);
             }
 
             @Override
@@ -51,17 +51,17 @@ public class TrackingService extends Service {
             }
         };
 
-        if (m.receivingLocations) {
+        if (app.receivingLocations) {
             startReceiving();
         }
-        if (!m.activeRecordingType.isEmpty()) {
+        if (app.activeRecordingType != null) {
             startRecording();
         }
     }
 
     @Override
     public void onDestroy() {
-        m.unregisterTrackingService();
+        app.unregisterTrackingService();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class TrackingService extends Service {
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         if (location != null) {
-            m.lastKnownLocationArrived(location);
+            app.lastKnownLocationArrived(location);
         }
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
@@ -97,7 +97,7 @@ public class TrackingService extends Service {
                 .setContentIntent(pendingIntent)
                 .getNotification();
 
-        startForeground(m.getNotificationsId(), notification);
+        startForeground(app.getNotificationsId(), notification);
     }
 
     public void stopRecording() {
