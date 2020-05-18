@@ -22,7 +22,7 @@ import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.FormatTools;
 
-public class Exporter {
+public class Exporter implements Runnable {
 
     public final Context c;
     public final long sinceTs;
@@ -47,15 +47,11 @@ public class Exporter {
                 .setCancelable(false)
                 .show();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                threaded();
-            }
-        }).start();
+        new Thread(this).start();
     }
 
-    public void threaded() {
+    @Override
+    public void run() {
         ft = new FormatTools();
 
         String dirLocs;
@@ -80,7 +76,7 @@ public class Exporter {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                alertDialog.hide();
+                alertDialog.dismiss();
                 Toast.makeText(c, res, Toast.LENGTH_LONG).show();
             }
         });

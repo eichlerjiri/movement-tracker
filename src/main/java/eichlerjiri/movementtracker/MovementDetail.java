@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
@@ -35,6 +36,12 @@ public class MovementDetail extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         app = App.get(this);
+
+        recording = getHistoryItem();
+        if (recording == null) {
+            Toast.makeText(this, "Detail not available", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         TextView detailText = new TextView(this);
 
@@ -62,12 +69,6 @@ public class MovementDetail extends Activity {
 
         actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setDisplayHomeAsUpEnabled(true);
-
-        recording = getHistoryItem();
-        if (recording == null) {
-            detailText.setText("Detail not available");
-            return;
-        }
 
         setTitle(recording.movementType);
 

@@ -46,7 +46,7 @@ public class ExportButton extends Button {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                 Calendar c = Calendar.getInstance();
-                c.set(year, month, dayOfMonth);
+                c.set(year, month, dayOfMonth, 0, 0, 0);
                 new Exporter(getContext(), c.getTimeInMillis(), format, formatTitle).exportTracks();
             }
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
