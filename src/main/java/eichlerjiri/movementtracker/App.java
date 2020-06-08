@@ -105,8 +105,7 @@ public class App extends Application {
             return true;
         }
 
-        double distance = distance(lastRecordedLocation.getLatitude(), lastRecordedLocation.getLongitude(),
-                location.getLatitude(), location.getLongitude());
+        double distance = distance(lastRecordedLocation.getLatitude(), lastRecordedLocation.getLongitude(), location.getLatitude(), location.getLongitude());
 
         if (distance >= lastRecordedLocation.getAccuracy() + location.getAccuracy() || (last && distance > 0)) {
             doRecordLocation(location);

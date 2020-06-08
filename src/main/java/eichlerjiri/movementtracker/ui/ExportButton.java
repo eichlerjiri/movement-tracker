@@ -29,8 +29,7 @@ public class ExportButton extends Button {
             @Override
             public void onClick(View v) {
                 MovementTracker t = (MovementTracker) getContext();
-                if (Build.VERSION.SDK_INT >= 23 && t.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= 23 && t.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     t.lastExportButton = ExportButton.this;
                     t.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 } else {

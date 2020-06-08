@@ -101,11 +101,11 @@ public class Exporter implements Runnable {
 
     public int doWriteTCX(Database d, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        w.write("<TrainingCenterDatabase" +
-                " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\"" +
-                " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
-                " xsi:schemaLocation=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" +
-                " http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd\">\n");
+        w.write("<TrainingCenterDatabase"
+                + " xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\""
+                + " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+                + " xsi:schemaLocation=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+                + " http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd\">\n");
         w.write("<Activities>\n");
 
         ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
@@ -159,11 +159,11 @@ public class Exporter implements Runnable {
 
     public int doWriteGPX(Database d, BufferedWriter w) throws IOException {
         w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        w.write("<gpx version=\"1.1\"" +
-                " xmlns=\"http://www.topografix.com/GPX/1/1\"" +
-                " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
-                " xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1" +
-                " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
+        w.write("<gpx version=\"1.1\""
+                + " xmlns=\"http://www.topografix.com/GPX/1/1\""
+                + " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+                + " xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1"
+                + " http://www.topografix.com/GPX/1/1/gpx.xsd\">\n");
 
         ObjectList<HistoryRow> rows = d.getHistorySince(sinceTs);
         for (int i = 0; i < rows.size; i++) {

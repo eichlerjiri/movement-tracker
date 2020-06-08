@@ -43,18 +43,18 @@ public class Database {
     }
 
     public void createDatabase() {
-        execSQL("CREATE TABLE recording(id INTEGER PRIMARY KEY," +
-                "ts INTEGER," +
-                "ts_end INTEGER," +
-                "movement_type VARCHAR(20)," +
-                "distance DOUBLE)"
+        execSQL("CREATE TABLE recording(id INTEGER PRIMARY KEY,"
+                + "ts INTEGER,"
+                + "ts_end INTEGER,"
+                + "movement_type VARCHAR(20),"
+                + "distance DOUBLE)"
         );
 
-        execSQL("CREATE TABLE location(id INTEGER PRIMARY KEY," +
-                "id_recording INTEGER," +
-                "ts INTEGER," +
-                "lat DOUBLE," +
-                "lon DOUBLE)"
+        execSQL("CREATE TABLE location(id INTEGER PRIMARY KEY,"
+                + "id_recording INTEGER,"
+                + "ts INTEGER,"
+                + "lat DOUBLE,"
+                + "lon DOUBLE)"
         );
 
         execSQL("CREATE INDEX recording_ts ON recording(ts)");
@@ -123,8 +123,7 @@ public class Database {
     public ObjectList<HistoryRow> prepareHistory(String selection, String[] selectionArgs, String orderBy) {
         ObjectList<HistoryRow> ret = new ObjectList<>(HistoryRow.class);
 
-        Cursor c = query("recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"},
-                selection, selectionArgs, null, null, orderBy, null);
+        Cursor c = query("recording", new String[]{"id", "ts", "ts_end", "movement_type", "distance"}, selection, selectionArgs, null, null, orderBy, null);
         while (c.moveToNext()) {
             ret.add(new HistoryRow(c.getLong(0), c.getLong(1), c.getLong(2), c.getString(3), c.getDouble(4)));
         }
@@ -152,8 +151,7 @@ public class Database {
     public ObjectList<LocationRow> getLocations(long idRecording) {
         ObjectList<LocationRow> ret = new ObjectList<>(LocationRow.class);
 
-        Cursor c = query("location", new String[]{"ts", "lat", "lon"}, "id_recording=?",
-                new String[]{String.valueOf(idRecording)}, null, null, "ts,id", null);
+        Cursor c = query("location", new String[]{"ts", "lat", "lon"}, "id_recording=?", new String[]{String.valueOf(idRecording)}, null, null, "ts,id", null);
         while (c.moveToNext()) {
             ret.add(new LocationRow(c.getLong(0), c.getDouble(1), c.getDouble(2)));
         }

@@ -81,11 +81,10 @@ public class MovementDetail extends Activity {
 
         ObjectList<LocationRow> locations = app.database.getLocations(recording.id);
 
-        String text = "from " + app.ft.formatDateTime(from) +
-                " to " + (sameDay ? app.ft.formatTime(to) : app.ft.formatDateTime(to)) + "\n" +
-                "locations: " + locations.size + "\n" +
-                "duration: " + app.ft.formatDuration(duration) + "\n" +
-                "distance: " + app.ft.formatDistance(distance);
+        String text = "from " + app.ft.formatDateTime(from) + " to " + (sameDay ? app.ft.formatTime(to) : app.ft.formatDateTime(to)) + "\n"
+                + "locations: " + locations.size + "\n"
+                + "duration: " + app.ft.formatDuration(duration) + "\n"
+                + "distance: " + app.ft.formatDistance(distance);
 
         double avgSpeed = avgSpeed(distance, duration);
         if (avgSpeed != 0.0) {
