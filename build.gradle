@@ -29,5 +29,5 @@ repositories {
 }
 
 dependencies {
-    implementation project(':map-component')
+    implementation ':map-component'
 }

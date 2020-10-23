@@ -1,2 +1,1 @@
-include ":map-component"
-project(":map-component").projectDir = file("../map-component")
+includeBuild '../map-component'
