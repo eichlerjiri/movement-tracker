@@ -12,7 +12,7 @@ public class FormatTools {
 
     public Date date;
     public SimpleDateFormat formatDateTime;
-    public SimpleDateFormat formatDateTimeISO;
+    public SimpleDateFormat formatDateShort;
     public SimpleDateFormat formatDateTimeUTC;
     public SimpleDateFormat formatTime;
 
@@ -32,11 +32,11 @@ public class FormatTools {
         return format(formatDateTime, millis);
     }
 
-    public String formatDateTimeISO(long millis) {
-        if (formatDateTimeISO == null) {
-            formatDateTimeISO = prepareDateFormat("yyyy-MM-dd HH:mm:ss");
+    public String formatDateShort(long millis) {
+        if (formatDateShort == null) {
+            formatDateShort = prepareDateFormat("yyyyMMdd");
         }
-        return format(formatDateTimeISO, millis);
+        return format(formatDateShort, millis);
     }
 
     public String formatDateTimeUTC(long millis) {

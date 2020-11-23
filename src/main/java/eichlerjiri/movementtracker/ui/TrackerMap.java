@@ -53,6 +53,7 @@ public class TrackerMap extends MapComponent {
                 if (!donePositionInit) {
                     donePositionInit = true;
                     centerMap();
+                    commit();
                 }
             }
         });
@@ -88,7 +89,6 @@ public class TrackerMap extends MapComponent {
             setZoom(zoom);
             setAzimuth(0);
         }
-        commit();
     }
 
     public void updateLocation(boolean recorded) {
@@ -113,16 +113,17 @@ public class TrackerMap extends MapComponent {
             setPath(pathPositions.data, 0, pathPositions.size);
         }
 
-        commit();
-
-        if (centered) {
+        if (d.centered) {
             centerMap();
         }
+
+        commit();
     }
 
     public void updateLastKnownLocation() {
-        if (centered) {
+        if (d.centered) {
             centerMap();
+            commit();
         }
     }
 
@@ -133,10 +134,10 @@ public class TrackerMap extends MapComponent {
         setStartPosition(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
         startDisplayed = false;
 
-        commit();
-
-        if (centered) {
+        if (d.centered) {
             centerMap();
         }
+
+        commit();
     }
 }

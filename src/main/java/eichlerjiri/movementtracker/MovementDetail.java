@@ -130,7 +130,7 @@ public class MovementDetail extends Activity {
         super.onRestoreInstanceState(savedInstanceState);
 
         map.restoreInstanceState(savedInstanceState.getBundle("map"));
-        donePositionInit = !map.centered;
+        donePositionInit = !map.d.centered;
     }
 
     @Override
@@ -182,6 +182,7 @@ public class MovementDetail extends Activity {
                 if (!donePositionInit) {
                     donePositionInit = true;
                     doCenterMap();
+                    map.commit();
                 }
             }
         });
@@ -189,7 +190,6 @@ public class MovementDetail extends Activity {
 
     public void doCenterMap() {
         map.moveToBoundary(geoBoundary.minX, geoBoundary.minY, geoBoundary.maxX, geoBoundary.maxY, 18, 30);
-        map.commit();
     }
 
     public void confirmDeleteRecording() {

@@ -197,7 +197,7 @@ public class MovementTracker extends Activity {
             historyList.onRestoreInstanceState(savedInstanceState.getParcelable("historyList"));
         }
         map.restoreInstanceState(savedInstanceState.getBundle("map"));
-        map.donePositionInit = !map.centered;
+        map.donePositionInit = !map.d.centered;
     }
 
     @Override

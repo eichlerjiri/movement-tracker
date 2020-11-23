@@ -63,7 +63,7 @@ public class Exporter implements Runnable {
         File docsDir = Environment.getExternalStoragePublicDirectory(dirLocs);
         docsDir.mkdirs();
 
-        String filename = "MovementTracker " + ft.formatDateTimeISO(System.currentTimeMillis()) + "." + format;
+        String filename = "movementtracker" + ft.formatDateShort(System.currentTimeMillis()) + "." + format;
 
         try {
             int cnt = doExport(new File(docsDir, filename));
