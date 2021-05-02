@@ -19,7 +19,6 @@ import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
-import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import static java.lang.Math.*;
 
@@ -45,7 +44,7 @@ public class MovementDetail extends Activity {
 
         TextView detailText = new TextView(this);
 
-        int padding = round(4 * spSize(this));
+        int padding = round(4 * getResources().getDisplayMetrics().scaledDensity);
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);

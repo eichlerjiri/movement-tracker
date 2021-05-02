@@ -27,21 +27,21 @@ public class FormatTools {
 
     public String formatDateTime(long millis) {
         if (formatDateTime == null) {
-            formatDateTime = prepareDateFormat("d.M.yyyy HH:mm");
+            formatDateTime = new SimpleDateFormat("d.M.yyyy HH:mm", Locale.US);
         }
         return format(formatDateTime, millis);
     }
 
     public String formatDateShort(long millis) {
         if (formatDateShort == null) {
-            formatDateShort = prepareDateFormat("yyyyMMdd");
+            formatDateShort = new SimpleDateFormat("yyyyMMdd", Locale.US);
         }
         return format(formatDateShort, millis);
     }
 
     public String formatDateTimeUTC(long millis) {
         if (formatDateTimeUTC == null) {
-            formatDateTimeUTC = prepareDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            formatDateTimeUTC = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
             formatDateTimeUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
         }
         return format(formatDateTimeUTC, millis);
@@ -49,13 +49,9 @@ public class FormatTools {
 
     public String formatTime(long millis) {
         if (formatTime == null) {
-            formatTime = prepareDateFormat("HH:mm");
+            formatTime = new SimpleDateFormat("HH:mm", Locale.US);
         }
         return format(formatTime, millis);
-    }
-
-    public static SimpleDateFormat prepareDateFormat(String template) {
-        return new SimpleDateFormat(template, Locale.US);
     }
 
     public String format(SimpleDateFormat format, long millis) {

@@ -28,7 +28,6 @@ import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
 
 import static android.view.ViewGroup.LayoutParams.*;
-import static eichlerjiri.mapcomponent.utils.Common.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import static java.lang.Math.*;
 
@@ -77,7 +76,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = round(4 * spSize(this));
+        int padding = round(4 * getResources().getDisplayMetrics().scaledDensity);
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));

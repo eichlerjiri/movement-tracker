@@ -96,12 +96,8 @@ public class TrackerMap extends MapComponent {
         double lat = l.getLatitude();
         double lon = l.getLongitude();
 
-        if (l == null) {
-            setCurrentPosition(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-        } else {
-            float bearing = l.hasBearing() ? l.getBearing() : Float.NEGATIVE_INFINITY;
-            setCurrentPosition(lonToMercatorX(l.getLongitude()), latToMercatorY(l.getLatitude()), bearing);
-        }
+        float bearing = l.hasBearing() ? l.getBearing() : Float.NEGATIVE_INFINITY;
+        setCurrentPosition(lonToMercatorX(lon), latToMercatorY(lat), bearing);
 
         if (recorded) {
             if (!startDisplayed) {
