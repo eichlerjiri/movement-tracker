@@ -2,6 +2,8 @@ package eichlerjiri.movementtracker;
 
 import android.Manifest;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -90,11 +92,28 @@ public class TrackingService extends Service {
         Intent notificationIntent = new Intent(this, MovementTracker.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-        Notification notification = new Notification.Builder(this)
-                .setContentTitle("Recording")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .getNotification();
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= 26) {
+            String id = "eichlerjiri.movementtracker";
+
+            NotificationChannel channel = new NotificationChannel(id, "Movement Tracker", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setSound(null, null);
+
+            NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+
+            notification = new Notification.Builder(this, id)
+                    .setContentTitle("Recording")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentIntent(pendingIntent)
+                    .build();
+        } else {
+            notification = new Notification.Builder(this)
+                    .setContentTitle("Recording")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentIntent(pendingIntent)
+                    .getNotification();
+        }
 
         startForeground(app.getNotificationsId(), notification);
     }
