@@ -14,20 +14,18 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.view.ViewGroup;
+import static android.view.ViewGroup.LayoutParams.*;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.ui.ExportButton;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
-
-import static android.view.ViewGroup.LayoutParams.*;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import static java.lang.Math.*;
 

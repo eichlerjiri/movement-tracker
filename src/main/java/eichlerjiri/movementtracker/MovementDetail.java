@@ -11,15 +11,13 @@ import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
-
 import static eichlerjiri.movementtracker.utils.Common.*;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 import static java.lang.Math.*;
 
 public class MovementDetail extends Activity {

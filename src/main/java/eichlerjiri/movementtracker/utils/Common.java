@@ -1,7 +1,6 @@
 package eichlerjiri.movementtracker.utils;
 
 import eichlerjiri.mapcomponent.utils.ObjectList;
-
 import static java.lang.Math.*;
 
 public class Common {

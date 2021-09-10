@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.util.Log;
-
 import eichlerjiri.mapcomponent.utils.ObjectList;
+import static eichlerjiri.movementtracker.utils.Common.*;
 import eichlerjiri.movementtracker.utils.FormatTools;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
-
-import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class App extends Application {
 

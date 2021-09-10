@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.Button;
-
 import eichlerjiri.movementtracker.App;
 
 public class MovementTypeButton extends Button {
@@ -76,7 +75,7 @@ public class MovementTypeButton extends Button {
     }
 
     public void resetBackground() {
-        setBackgroundDrawable(originalBackground);
+        setBackground(originalBackground);
         setTextColor(originalTextColor);
     }
 }

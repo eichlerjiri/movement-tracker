@@ -8,11 +8,9 @@ import android.os.Build;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
-
+import eichlerjiri.movementtracker.MovementTracker;
 import java.util.Calendar;
 import java.util.Locale;
-
-import eichlerjiri.movementtracker.MovementTracker;
 
 public class ExportButton extends Button {
 

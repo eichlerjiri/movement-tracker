@@ -3,15 +3,13 @@ package eichlerjiri.movementtracker.ui;
 import android.content.Context;
 import android.location.Location;
 import android.view.ViewTreeObserver;
-
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.App;
 import eichlerjiri.movementtracker.db.LocationRow;
-import eichlerjiri.movementtracker.utils.GeoBoundary;
-
 import static eichlerjiri.movementtracker.utils.Common.*;
+import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 public class TrackerMap extends MapComponent {
 

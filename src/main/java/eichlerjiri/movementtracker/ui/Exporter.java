@@ -8,19 +8,18 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.App;
 import eichlerjiri.movementtracker.Database;
 import eichlerjiri.movementtracker.db.HistoryRow;
 import eichlerjiri.movementtracker.db.LocationRow;
 import eichlerjiri.movementtracker.utils.FormatTools;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 public class Exporter implements Runnable {
 
@@ -83,7 +82,7 @@ public class Exporter implements Runnable {
     }
 
     public int doExport(File docsDir) throws IOException {
-        BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), "UTF-8"));
+        BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(docsDir), StandardCharsets.UTF_8));
         try {
             if ("tcx".equals(format)) {
                 return doWriteTCX(App.get(c).database, w);
