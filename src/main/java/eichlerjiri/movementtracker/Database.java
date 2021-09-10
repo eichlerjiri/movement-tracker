@@ -7,8 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import eichlerjiri.mapcomponent.utils.ObjectList;
-import eichlerjiri.movementtracker.db.HistoryRow;
-import eichlerjiri.movementtracker.db.LocationRow;
 import static eichlerjiri.movementtracker.utils.Common.*;
 
 public class Database {
@@ -196,6 +194,36 @@ public class Database {
             return sqlite().query(table, columns, selection, selectionArgs, groupBy, having, orderBy, limit);
         } catch (SQLException e) {
             throw new Error(e);
+        }
+    }
+
+    public static class LocationRow {
+
+        public final long ts;
+        public final double lat;
+        public final double lon;
+
+        public LocationRow(long ts, double lat, double lon) {
+            this.ts = ts;
+            this.lat = lat;
+            this.lon = lon;
+        }
+    }
+
+    public static class HistoryRow {
+
+        public final long id;
+        public final long ts;
+        public final long tsEnd;
+        public final String movementType;
+        public final double distance;
+
+        public HistoryRow(long id, long ts, long tsEnd, String movementType, double distance) {
+            this.id = id;
+            this.ts = ts;
+            this.tsEnd = tsEnd;
+            this.movementType = movementType;
+            this.distance = distance;
         }
     }
 }

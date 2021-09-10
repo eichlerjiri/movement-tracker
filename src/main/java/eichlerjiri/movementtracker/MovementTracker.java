@@ -22,7 +22,7 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import eichlerjiri.mapcomponent.utils.ObjectList;
-import eichlerjiri.movementtracker.db.HistoryRow;
+import eichlerjiri.movementtracker.Database.HistoryRow;
 import eichlerjiri.movementtracker.ui.ExportButton;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
