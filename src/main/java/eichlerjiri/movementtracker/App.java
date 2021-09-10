@@ -7,13 +7,11 @@ import android.location.Location;
 import android.util.Log;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import static eichlerjiri.movementtracker.utils.Common.*;
-import eichlerjiri.movementtracker.utils.FormatTools;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
 public class App extends Application {
 
     public final Database database;
-    public final FormatTools ft;
 
     public TrackingService trackingService;
     public final ObjectList<MovementTracker> movementTrackers;
@@ -51,7 +49,6 @@ public class App extends Application {
         });
 
         database = new Database(this);
-        ft = new FormatTools();
         movementTrackers = new ObjectList<>(MovementTracker.class);
         startedMovementTrackers = new ObjectList<>(MovementTracker.class);
     }

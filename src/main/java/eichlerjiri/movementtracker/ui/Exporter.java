@@ -13,7 +13,7 @@ import eichlerjiri.movementtracker.App;
 import eichlerjiri.movementtracker.Database;
 import eichlerjiri.movementtracker.Database.HistoryRow;
 import eichlerjiri.movementtracker.Database.LocationRow;
-import eichlerjiri.movementtracker.utils.FormatTools;
+import static eichlerjiri.movementtracker.utils.Common.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,7 +29,6 @@ public class Exporter implements Runnable {
     public final String formatTitle;
 
     public AlertDialog alertDialog;
-    public FormatTools ft;
     public String res;
 
     public Exporter(Context c, long sinceTs, String format, String formatTitle) {
@@ -51,8 +50,6 @@ public class Exporter implements Runnable {
 
     @Override
     public void run() {
-        ft = new FormatTools();
-
         String dirLocs;
         if (Build.VERSION.SDK_INT >= 19) {
             dirLocs = Environment.DIRECTORY_DOCUMENTS;
@@ -62,7 +59,7 @@ public class Exporter implements Runnable {
         File docsDir = Environment.getExternalStoragePublicDirectory(dirLocs);
         docsDir.mkdirs();
 
-        String filename = "movementtracker" + ft.formatDateShort(System.currentTimeMillis()) + "." + format;
+        String filename = "movementtracker" + formatDateShort(System.currentTimeMillis()) + "." + format;
 
         try {
             int cnt = doExport(new File(docsDir, filename));
@@ -132,7 +129,7 @@ public class Exporter implements Runnable {
 
                 w.write("<Trackpoint>\n");
                 w.write("<Time>");
-                w.write(ft.formatDateTimeUTC(loc.ts));
+                w.write(formatDateTimeISOUTC(loc.ts));
                 w.write("</Time>\n");
                 w.write("<Position>\n");
                 w.write("<LatitudeDegrees>");
@@ -192,7 +189,7 @@ public class Exporter implements Runnable {
                 w.write(Double.toString(loc.lon));
                 w.write("\">\n");
                 w.write("<time>");
-                w.write(ft.formatDateTimeUTC(loc.ts));
+                w.write(formatDateTimeISOUTC(loc.ts));
                 w.write("</time>\n");
                 w.write("</trkpt>\n");
             }
