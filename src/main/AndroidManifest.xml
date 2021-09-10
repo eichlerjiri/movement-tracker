@@ -9,6 +9,7 @@
     <application
         android:name="eichlerjiri.movementtracker.App"
         android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true"
         android:label="Movement Tracker">
         <activity android:name="eichlerjiri.movementtracker.MovementTracker">
             <intent-filter>
