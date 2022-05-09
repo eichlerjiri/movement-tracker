@@ -99,7 +99,7 @@ public class TrackingService extends Service {
             NotificationChannel channel = new NotificationChannel(id, "Movement Tracker", NotificationManager.IMPORTANCE_DEFAULT);
             channel.setSound(null, null);
 
-            NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.createNotificationChannel(channel);
 
             notification = new Notification.Builder(this, id)
