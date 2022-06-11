@@ -180,8 +180,8 @@ public class App extends Application {
     }
 
     public void resumedMovementTracker() {
-        movementTrackerForeground = true;
         refreshReceiving();
+        movementTrackerForeground = true;
 
         if (locationServiceIntent != null) {
             locationServiceConnection = prepareServiceConnection();
