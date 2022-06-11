@@ -1,11 +1,13 @@
 package eichlerjiri.movementtracker;
 
 import android.app.Application;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.location.Location;
+import android.os.IBinder;
 import android.util.Log;
-import eichlerjiri.mapcomponent.utils.ObjectList;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
@@ -14,12 +16,15 @@ public class App extends Application {
     public final Database database;
 
     public TrackingService trackingService;
-    public final ObjectList<MovementTracker> movementTrackers;
-    public final ObjectList<MovementTracker> startedMovementTrackers;
+    public MovementTracker movementTracker;
+    public boolean movementTrackerForeground;
+
+    public boolean locationPermissionDone;
+    public Intent locationServiceIntent;
+    public ServiceConnection locationServiceConnection;
 
     public Location lastKnownLocation;
     public Location lastLocation;
-    public boolean receivingLocations;
 
     public long activeRecording;
     public String activeRecordingType;
@@ -49,8 +54,6 @@ public class App extends Application {
         });
 
         database = new Database(this);
-        movementTrackers = new ObjectList<>(MovementTracker.class);
-        startedMovementTrackers = new ObjectList<>(MovementTracker.class);
     }
 
     public static App get(Context c) {
@@ -66,27 +69,27 @@ public class App extends Application {
     }
 
     public void registerMovementTracker(MovementTracker movementTracker) {
-        movementTrackers.add(movementTracker);
+        this.movementTracker = movementTracker;
     }
 
-    public void unregisterMovementTracker(MovementTracker movementTracker) {
-        movementTrackers.remove(movementTracker);
+    public void unregisterMovementTracker() {
+        this.movementTracker = null;
     }
 
     public void locationArrived(Location location) {
         boolean recorded = recordLocation(location, false);
         lastLocation = location;
 
-        for (int i = 0; i < movementTrackers.size; i++) {
-            movementTrackers.data[i].lastLocationUpdated(recorded);
+        if (movementTracker != null) {
+            movementTracker.lastLocationUpdated(recorded);
         }
     }
 
     public void lastKnownLocationArrived(Location location) {
         lastKnownLocation = location;
 
-        for (int i = 0; i < movementTrackers.size; i++) {
-            movementTrackers.data[i].lastKnownLocationUpdated();
+        if (movementTracker != null) {
+            movementTracker.lastKnownLocationUpdated();
         }
     }
 
@@ -141,8 +144,8 @@ public class App extends Application {
         if (trackingService != null) {
             trackingService.startRecording();
         }
-        for (int i = 0; i < movementTrackers.size; i++) {
-            movementTrackers.data[i].recordingStarted();
+        if (movementTracker != null) {
+            movementTracker.recordingStarted();
         }
     }
 
@@ -164,45 +167,73 @@ public class App extends Application {
         if (trackingService != null) {
             trackingService.stopRecording();
         }
-        for (int i = 0; i < movementTrackers.size; i++) {
-            movementTrackers.data[i].recordingStopped();
+        if (movementTracker != null) {
+            movementTracker.recordingStopped();
         }
     }
 
     public void deleteRecording(long id) {
         database.deleteRecording(id);
-        for (int i = 0; i < movementTrackers.size; i++) {
-            movementTrackers.data[i].reloadHistoryList();
+        if (movementTracker != null) {
+            movementTracker.reloadHistoryList();
         }
     }
 
-    public void startedMovementTracker(MovementTracker movementTracker) {
-        startedMovementTrackers.add(movementTracker);
+    public void resumedMovementTracker() {
+        movementTrackerForeground = true;
         refreshReceiving();
+
+        if (locationServiceIntent != null) {
+            locationServiceConnection = prepareServiceConnection();
+            movementTracker.bindService(locationServiceIntent, locationServiceConnection, 0);
+        }
     }
 
-    public void stoppedMovementTracker(MovementTracker movementTracker) {
-        startedMovementTrackers.remove(movementTracker);
+    public void pausedMovementTracker() {
+        if (locationServiceIntent != null) {
+            movementTracker.unbindService(locationServiceConnection);
+            locationServiceConnection = null;
+        }
+
+        movementTrackerForeground = false;
         refreshReceiving();
     }
 
     public void refreshReceiving() {
-        boolean requested = startedMovementTrackers.size != 0 || activeRecordingType != null;
+        if (!locationPermissionDone) {
+            return;
+        }
 
-        if (requested && !receivingLocations) {
-            receivingLocations = true;
-            if (trackingService != null) {
-                trackingService.startReceiving();
+        boolean requested = movementTrackerForeground || activeRecordingType != null;
+
+        if (requested && locationServiceIntent == null) {
+            locationServiceIntent = new Intent(this, TrackingService.class);
+            startService(locationServiceIntent);
+
+            if (movementTrackerForeground) {
+                locationServiceConnection = prepareServiceConnection();
+                movementTracker.bindService(locationServiceIntent, locationServiceConnection, 0);
             }
-        } else if (!requested && receivingLocations) {
-            receivingLocations = false;
-            if (trackingService != null) {
-                trackingService.stopReceiving();
-            }
+
+        } else if (!requested && locationServiceIntent != null) {
+            stopService(locationServiceIntent);
+            locationServiceIntent = null;
         }
     }
 
     public int getNotificationsId() {
         return ++notificationCounter;
+    }
+
+    public ServiceConnection prepareServiceConnection() {
+        return new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+            }
+        };
     }
 }

@@ -29,9 +29,8 @@ public class TrackingService extends Service {
         app = App.get(this);
         app.registerTrackingService(this);
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (locationManager == null) {
-            throw new Error("Location service not available.");
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            throw new Error("Missing permissions for location service.");
         }
 
         locationListener = new LocationListener() {
@@ -53,27 +52,9 @@ public class TrackingService extends Service {
             }
         };
 
-        if (app.receivingLocations) {
-            startReceiving();
-        }
-        if (app.activeRecordingType != null) {
-            startRecording();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        app.unregisterTrackingService();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return new Binder();
-    }
-
-    public void startReceiving() {
-        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            throw new Error("Missing permissions for location service.");
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager == null) {
+            throw new Error("Location service not available.");
         }
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -82,10 +63,22 @@ public class TrackingService extends Service {
         }
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+
+        if (app.activeRecordingType != null) {
+            startRecording();
+        }
     }
 
-    public void stopReceiving() {
+    @Override
+    public void onDestroy() {
+        app.unregisterTrackingService();
+
         locationManager.removeUpdates(locationListener);
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new Binder();
     }
 
     public void startRecording() {

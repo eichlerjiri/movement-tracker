@@ -4,14 +4,11 @@ import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentTransaction;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.View;
 import android.view.ViewGroup;
 import static android.view.ViewGroup.LayoutParams.*;
@@ -47,17 +44,6 @@ public class MovementTracker extends Activity {
 
     public TrackerMap map;
 
-    public final ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-        }
-    };
-    public boolean serviceBound;
-
     public ExportButton lastExportButton;
 
     @Override
@@ -75,16 +61,16 @@ public class MovementTracker extends Activity {
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 0);
             } else {
-                initTrackingService();
+                app.locationPermissionDone = true;
             }
         } else if (Build.VERSION.SDK_INT >= 23) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
             } else {
-                initTrackingService();
+                app.locationPermissionDone = true;
             }
         } else {
-            initTrackingService();
+            app.locationPermissionDone = true;
         }
 
         recordingText = new TextView(this);
@@ -161,25 +147,21 @@ public class MovementTracker extends Activity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        app.unregisterMovementTracker(this);
-
-        if (serviceBound) {
-            unbindService(serviceConnection);
-        }
+        app.unregisterMovementTracker();
 
         map.close();
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        app.startedMovementTracker(this);
+    public void onResume() {
+        super.onResume();
+        app.resumedMovementTracker();
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
-        app.stoppedMovementTracker(this);
+    public void onPause() {
+        super.onPause();
+        app.pausedMovementTracker();
     }
 
     @Override
@@ -189,7 +171,8 @@ public class MovementTracker extends Activity {
                 if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
                     throw new Error("Permission to location service rejected.");
                 }
-                initTrackingService();
+                app.locationPermissionDone = true;
+                app.refreshReceiving();
                 break;
             } else if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permissions[i])) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
@@ -221,13 +204,6 @@ public class MovementTracker extends Activity {
             outState.putParcelable("historyList", historyList.onSaveInstanceState());
         }
         outState.putBundle("map", map.saveInstanceState());
-    }
-
-    public void initTrackingService() {
-        Intent intent = new Intent(this, TrackingService.class);
-        startService(intent);
-        bindService(intent, serviceConnection, 0);
-        serviceBound = true;
     }
 
     public void updateText() {
