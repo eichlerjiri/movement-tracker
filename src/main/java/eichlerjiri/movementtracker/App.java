@@ -180,21 +180,11 @@ public class App extends Application {
     }
 
     public void resumedMovementTracker() {
-        refreshReceiving();
         movementTrackerForeground = true;
-
-        if (locationServiceIntent != null) {
-            locationServiceConnection = prepareServiceConnection();
-            movementTracker.bindService(locationServiceIntent, locationServiceConnection, 0);
-        }
+        refreshReceiving();
     }
 
     public void pausedMovementTracker() {
-        if (locationServiceIntent != null) {
-            movementTracker.unbindService(locationServiceConnection);
-            locationServiceConnection = null;
-        }
-
         movementTrackerForeground = false;
         refreshReceiving();
     }
@@ -210,14 +200,18 @@ public class App extends Application {
             locationServiceIntent = new Intent(this, TrackingService.class);
             startService(locationServiceIntent);
 
-            if (movementTrackerForeground) {
-                locationServiceConnection = prepareServiceConnection();
-                movementTracker.bindService(locationServiceIntent, locationServiceConnection, 0);
-            }
-
         } else if (!requested && locationServiceIntent != null) {
             stopService(locationServiceIntent);
             locationServiceIntent = null;
+        }
+
+        if (movementTrackerForeground && locationServiceConnection == null) {
+            locationServiceConnection = prepareServiceConnection();
+            movementTracker.bindService(locationServiceIntent, locationServiceConnection, 0);
+
+        } else if (!movementTrackerForeground && locationServiceConnection != null) {
+            movementTracker.unbindService(locationServiceConnection);
+            locationServiceConnection = null;
         }
     }
 
