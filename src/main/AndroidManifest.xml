@@ -13,7 +13,9 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Movement Tracker"
         android:requestLegacyExternalStorage="true">
-        <activity android:name="eichlerjiri.movementtracker.MovementTracker">
+        <activity
+            android:name="eichlerjiri.movementtracker.MovementTracker"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -149,14 +149,12 @@ public class Common {
     }
 
     public static String formatDecimal(double value, int decimalPlaces) {
-        long pow = 10;
+        long pow = 1;
         for (int i = 0; i < decimalPlaces; i++) {
             pow *= 10;
         }
+        long full = round(value * pow);
 
-        long leftPart = (long) floor(value);
-        long rightPart = round((value - leftPart) * pow);
-
-        return leftPart + "." + formatToSize(rightPart, decimalPlaces);
+        return (full / pow) + "." + formatToSize(full % pow, decimalPlaces);
     }
 }

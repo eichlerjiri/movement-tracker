@@ -83,7 +83,12 @@ public class TrackingService extends Service {
 
     public void startRecording() {
         Intent notificationIntent = new Intent(this, MovementTracker.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        int flag = 0;
+        if (Build.VERSION.SDK_INT >= 23) {
+            flag |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flag);
 
         Notification notification;
         if (Build.VERSION.SDK_INT >= 26) {
