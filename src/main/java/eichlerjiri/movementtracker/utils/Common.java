@@ -1,16 +1,15 @@
 package eichlerjiri.movementtracker.utils;
 
-import android.util.Log;
 import static eichlerjiri.mapcomponent.utils.Common.*;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import static java.lang.Math.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Calendar;
@@ -19,6 +18,14 @@ import java.util.TimeZone;
 import javax.net.ssl.HttpsURLConnection;
 
 public class Common {
+
+    public static String exceptionToString(Throwable t) {
+        String ret = t.getMessage();
+        if (ret == null) {
+            ret = t.getClass().getCanonicalName();
+        }
+        return ret;
+    }
 
     public static double lonToMercatorX(double lon) {
         return (lon + 180) / 360;
@@ -222,45 +229,50 @@ public class Common {
     }
 
     public static String uploadMultipartFile(String url, byte[] file, String filename) throws InterruptedIOException {
+        if (filename.contains("\"") || filename.contains("\r") || filename.contains("\n")) {
+            return "Invalid filename";
+        }
+
         String boundary;
         do {
             boundary = "----------------" + bytesToHexStr(randomBytes(8));
         } while (containsByteArray(file, strToBytes(boundary)));
 
-        HttpURLConnection conn = null;
         try {
             URLConnection urlConn = new URL(url).openConnection();
             if (!(urlConn instanceof HttpURLConnection)) {
                 return "Unknown protocol";
             }
-            conn = (HttpURLConnection) urlConn;
+            HttpURLConnection conn = (HttpURLConnection) urlConn;
 
             if (conn instanceof HttpsURLConnection) {
                 ((HttpsURLConnection) conn).setSSLSocketFactory(prepareSSLSocketFactory());
             }
 
+            conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
-            OutputStream os = conn.getOutputStream();
-            os.write(strToBytes("--" + boundary + "\r\n" +
-                    "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
-                    "\r\n"));
-            os.write(file);
-            os.write(strToBytes("--" + boundary + "--\r\n"));
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(strToBytes("--" + boundary + "\r\n" +
+                        "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
+                        "\r\n"));
+                os.write(file);
+                os.write(strToBytes("--" + boundary + "--\r\n"));
+            }
 
-            try (InputStream is = conn.getInputStream()) {
-                readAll(is);
+            readHTTPResponse(conn);
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                return code + ": " + conn.getResponseMessage();
             }
             return "";
         } catch (InterruptedIOException e) {
             throw e;
+        } catch (UnknownHostException e) {
+            return "Unknown hostname";
         } catch (IOException e) {
-            Log.e("Common", "Cannot upload file: " + url, e);
-            if (conn != null) {
-                readErrorStream(conn);
-            }
-            return e.getMessage();
+            return exceptionToString(e);
         }
     }
 }

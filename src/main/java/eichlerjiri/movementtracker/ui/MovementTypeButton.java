@@ -18,7 +18,7 @@ public class MovementTypeButton extends Button {
 
     public MovementTypeButton(Context c, String movementType) {
         super(c);
-        app = App.get(c);
+        app = (App) c.getApplicationContext();
         this.movementType = movementType;
 
         originalBackground = getBackground();

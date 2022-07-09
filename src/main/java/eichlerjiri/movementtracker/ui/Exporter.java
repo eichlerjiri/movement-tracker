@@ -1,7 +1,9 @@
 package eichlerjiri.movementtracker.ui;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import static android.view.ViewGroup.LayoutParams.*;
@@ -20,8 +22,9 @@ import static java.lang.Math.*;
 
 public class Exporter implements Runnable {
 
-    public final MovementDetail c;
+    public final Context c;
     public final App app;
+    public final SharedPreferences preferences;
     public final HistoryRow recording;
     public final String format;
 
@@ -35,11 +38,12 @@ public class Exporter implements Runnable {
 
     public Exporter(MovementDetail c, HistoryRow recording, String format) {
         this.c = c;
-        this.app = App.get(c);
+        app = (App) c.getApplicationContext();
+        preferences = c.getSharedPreferences("movement-tracker", Context.MODE_PRIVATE);
         this.recording = recording;
         this.format = format;
 
-        url = "http://";
+        url = preferences.getString("exportUrl", "http://");
         filename = formatDateTimeShort(recording.ts) + "." + format;
     }
 
@@ -48,7 +52,6 @@ public class Exporter implements Runnable {
 
         TextView urlLabel = new TextView(c);
         urlLabel.setText("URL:");
-        urlLabel.setPadding(0, padding, 0, 0);
 
         urlText = new EditText(c);
         urlText.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
@@ -64,7 +67,7 @@ public class Exporter implements Runnable {
 
         LinearLayout dialog = new LinearLayout(c);
         dialog.setOrientation(LinearLayout.VERTICAL);
-        dialog.setPadding(padding, 0, padding, 0);
+        dialog.setPadding(padding, padding, padding, padding);
         dialog.addView(urlLabel);
         dialog.addView(urlText);
         dialog.addView(filenameLabel);
@@ -110,6 +113,7 @@ public class Exporter implements Runnable {
 
                     if (error.isEmpty()) {
                         Toast.makeText(c, "Exported " + filename, Toast.LENGTH_LONG).show();
+                        preferences.edit().putString("exportUrl", url).apply();
                     } else {
                         Toast.makeText(c, "Export failed: " + error, Toast.LENGTH_LONG).show();
                         exportTracks();

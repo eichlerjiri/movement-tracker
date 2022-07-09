@@ -33,7 +33,7 @@ public class MovementDetail extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        app = App.get(this);
+        app = (App) getApplicationContext();
 
         recording = getHistoryItem();
         if (recording == null) {

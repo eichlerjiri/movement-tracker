@@ -26,7 +26,7 @@ public class TrackingService extends Service {
 
     @Override
     public void onCreate() {
-        app = App.get(this);
+        app = (App) getApplicationContext();
         app.registerTrackingService(this);
 
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {

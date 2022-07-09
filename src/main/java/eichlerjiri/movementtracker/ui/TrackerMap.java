@@ -22,7 +22,7 @@ public class TrackerMap extends MapComponent {
 
     public TrackerMap(Context c, ObjectList<String> mapUrls) {
         super(c, mapUrls);
-        app = App.get(c);
+        app = (App) c.getApplicationContext();
 
         if (app.lastLocation != null) {
             updateLocation(false);

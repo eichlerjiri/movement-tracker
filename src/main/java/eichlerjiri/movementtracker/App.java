@@ -2,7 +2,6 @@ package eichlerjiri.movementtracker;
 
 import android.app.Application;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
@@ -42,11 +41,11 @@ public class App extends Application {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                Log.e("App", e.getMessage(), e);
+                Log.e("App", exceptionToString(e), e);
 
                 Intent intent = new Intent(App.this, ErrorActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.putExtra("msg", e.getMessage());
+                intent.putExtra("msg", exceptionToString(e));
                 startActivity(intent);
 
                 System.exit(1);
@@ -54,10 +53,6 @@ public class App extends Application {
         });
 
         database = new Database(this);
-    }
-
-    public static App get(Context c) {
-        return (App) c.getApplicationContext();
     }
 
     public void registerTrackingService(TrackingService service) {

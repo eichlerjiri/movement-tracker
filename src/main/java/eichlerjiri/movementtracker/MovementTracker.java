@@ -44,7 +44,7 @@ public class MovementTracker extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        app = App.get(this);
+        app = (App) getApplicationContext();
         app.registerMovementTracker(this);
 
         if (Build.VERSION.SDK_INT >= 29) {
