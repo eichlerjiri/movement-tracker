@@ -132,10 +132,6 @@ public class Database {
         return prepareHistory("ts_end<>0", null, "ts DESC,id");
     }
 
-    public ObjectList<HistoryRow> getHistorySince(long ts) {
-        return prepareHistory("ts_end<>0 AND ts>=?", new String[]{String.valueOf(ts)}, "ts,id");
-    }
-
     public HistoryRow getHistoryItem(long id) {
         ObjectList<HistoryRow> rows = prepareHistory("ts_end<>0 AND id=?", new String[]{String.valueOf(id)}, null);
         if (rows.size == 0) {

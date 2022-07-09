@@ -16,11 +16,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Database.HistoryRow;
-import eichlerjiri.movementtracker.ui.ExportButton;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
 import static eichlerjiri.movementtracker.utils.Common.*;
@@ -34,17 +32,14 @@ public class MovementTracker extends Activity {
     public ActionBar.Tab recordingTab;
     public ActionBar.Tab historyTab;
     public LinearLayout recordingView;
-    public RelativeLayout historyView;
+    public ListView historyList;
 
     public TextView recordingText;
     public ObjectList<HistoryRow> historyItems;
-    public ListView historyList;
 
     public final ObjectList<MovementTypeButton> buttons = new ObjectList<>(MovementTypeButton.class);
 
     public TrackerMap map;
-
-    public ExportButton lastExportButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -174,11 +169,6 @@ public class MovementTracker extends Activity {
                 app.locationPermissionDone = true;
                 app.refreshReceiving();
                 break;
-            } else if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permissions[i])) {
-                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                    lastExportButton.showDateExportSelector();
-                }
-                break;
             }
         }
     }
@@ -223,7 +213,7 @@ public class MovementTracker extends Activity {
 
             boolean sameDay = isSameDay(from, to);
 
-            text += "\nfrom " + formatDateTime(from) + " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n"
+            text += "\nfrom " + formatDateTimeCzech(from) + " to " + (sameDay ? formatTime(to) : formatDateTimeCzech(to)) + "\n"
                     + "locations: " + app.activeLocations + "\n"
                     + "duration: " + formatDuration(duration) + "\n"
                     + "distance: " + formatDistance(app.activeDistance);
@@ -238,31 +228,16 @@ public class MovementTracker extends Activity {
     }
 
     public View prepareHistoryView() {
-        if (historyView == null) {
-            historyView = new RelativeLayout(this);
-
+        if (historyList == null) {
             historyList = new ListView(this);
             historyList.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
-            historyView.addView(historyList);
-
-            LinearLayout exportButtonLayout = new LinearLayout(this);
-            exportButtonLayout.setOrientation(LinearLayout.VERTICAL);
-            exportButtonLayout.addView(new ExportButton(this, "tcx", "TCX"));
-            exportButtonLayout.addView(new ExportButton(this, "gpx", "GPX"));
-
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-            params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            exportButtonLayout.setLayoutParams(params);
-
-            historyView.addView(exportButtonLayout);
 
             reloadHistoryList();
         } else {
             historyList.setAdapter(historyList.getAdapter()); // solves random bug, when items are not clickable
         }
 
-        return historyView;
+        return historyList;
     }
 
     public void reloadHistoryList() {
@@ -274,7 +249,7 @@ public class MovementTracker extends Activity {
         String[] items = new String[historyItems.size];
         for (int i = 0; i < items.length; i++) {
             HistoryRow item = historyItems.data[i];
-            items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTime(item.ts);
+            items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTimeCzech(item.ts);
         }
 
         historyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

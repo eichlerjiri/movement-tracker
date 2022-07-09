@@ -1,10 +1,22 @@
 package eichlerjiri.movementtracker.utils;
 
+import android.util.Log;
+import static eichlerjiri.mapcomponent.utils.Common.*;
 import eichlerjiri.mapcomponent.utils.ObjectList;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import static java.lang.Math.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import javax.net.ssl.HttpsURLConnection;
 
 public class Common {
 
@@ -58,22 +70,15 @@ public class Common {
         }
     }
 
-    public static String formatDateTime(long timestamp) {
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTimeInMillis(timestamp);
-        return cal.get(Calendar.DAY_OF_MONTH)
-                + "." + (cal.get(Calendar.MONTH) + 1)
-                + "." + formatToSize(cal.get(Calendar.YEAR), 4)
-                + " " + formatToSize(cal.get(Calendar.HOUR_OF_DAY), 2)
-                + ":" + formatToSize(cal.get(Calendar.MINUTE), 2);
-    }
-
-    public static String formatDateShort(long timestamp) {
+    public static String formatDateTimeShort(long timestamp) {
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTimeInMillis(timestamp);
         return formatToSize(cal.get(Calendar.YEAR), 4)
                 + formatToSize(cal.get(Calendar.MONTH) + 1, 2)
-                + formatToSize(cal.get(Calendar.DAY_OF_MONTH), 2);
+                + formatToSize(cal.get(Calendar.DAY_OF_MONTH), 2)
+                + "-" + formatToSize(cal.get(Calendar.HOUR_OF_DAY), 2)
+                + formatToSize(cal.get(Calendar.MINUTE), 2)
+                + formatToSize(cal.get(Calendar.SECOND), 2);
     }
 
     public static String formatDateTimeISOUTC(long timestamp) {
@@ -87,6 +92,16 @@ public class Common {
                 + ":" + formatToSize(cal.get(Calendar.MINUTE), 2)
                 + ":" + formatToSize(cal.get(Calendar.SECOND), 2)
                 + "Z";
+    }
+
+    public static String formatDateTimeCzech(long timestamp) {
+        GregorianCalendar cal = new GregorianCalendar();
+        cal.setTimeInMillis(timestamp);
+        return cal.get(Calendar.DAY_OF_MONTH)
+                + "." + (cal.get(Calendar.MONTH) + 1)
+                + "." + formatToSize(cal.get(Calendar.YEAR), 4)
+                + " " + formatToSize(cal.get(Calendar.HOUR_OF_DAY), 2)
+                + ":" + formatToSize(cal.get(Calendar.MINUTE), 2);
     }
 
     public static String formatTime(long timestamp) {
@@ -148,6 +163,18 @@ public class Common {
         return str;
     }
 
+    public static String formatHexToSize(int num, int size) {
+        String str = Integer.toHexString(num);
+        if (str.length() > size) {
+            return str.substring(0, size);
+        } else {
+            while (str.length() < size) {
+                str = "0" + str;
+            }
+        }
+        return str;
+    }
+
     public static String formatDecimal(double value, int decimalPlaces) {
         long pow = 1;
         for (int i = 0; i < decimalPlaces; i++) {
@@ -156,5 +183,84 @@ public class Common {
         long full = round(value * pow);
 
         return (full / pow) + "." + formatToSize(full % pow, decimalPlaces);
+    }
+
+    public static byte[] strToBytes(String str) {
+        return str.getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static String bytesToHexStr(byte[] data) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append(formatHexToSize(data[i] & 0xFF, 2));
+        }
+        return sb.toString();
+    }
+
+    public static byte[] randomBytes(int length) {
+        byte[] random = new byte[length];
+        new SecureRandom().nextBytes(random);
+        return random;
+    }
+
+    public static boolean equalsByteArrayAt(byte[] array, byte[] target, int index) {
+        for (int i = 0; i < target.length; i++) {
+            if (array[index + i] != target[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean containsByteArray(byte[] array, byte[] target) {
+        for (int i = 0; i < array.length - target.length + 1; i++) {
+            if (equalsByteArrayAt(array, target, i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String uploadMultipartFile(String url, byte[] file, String filename) throws InterruptedIOException {
+        String boundary;
+        do {
+            boundary = "----------------" + bytesToHexStr(randomBytes(8));
+        } while (containsByteArray(file, strToBytes(boundary)));
+
+        HttpURLConnection conn = null;
+        try {
+            URLConnection urlConn = new URL(url).openConnection();
+            if (!(urlConn instanceof HttpURLConnection)) {
+                return "Unknown protocol";
+            }
+            conn = (HttpURLConnection) urlConn;
+
+            if (conn instanceof HttpsURLConnection) {
+                ((HttpsURLConnection) conn).setSSLSocketFactory(prepareSSLSocketFactory());
+            }
+
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+            OutputStream os = conn.getOutputStream();
+            os.write(strToBytes("--" + boundary + "\r\n" +
+                    "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
+                    "\r\n"));
+            os.write(file);
+            os.write(strToBytes("--" + boundary + "--\r\n"));
+
+            try (InputStream is = conn.getInputStream()) {
+                readAll(is);
+            }
+            return "";
+        } catch (InterruptedIOException e) {
+            throw e;
+        } catch (IOException e) {
+            Log.e("Common", "Cannot upload file: " + url, e);
+            if (conn != null) {
+                readErrorStream(conn);
+            }
+            return e.getMessage();
+        }
     }
 }

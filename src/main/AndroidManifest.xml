@@ -6,13 +6,12 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name="eichlerjiri.movementtracker.App"
         android:icon="@mipmap/ic_launcher"
         android:label="Movement Tracker"
-        android:requestLegacyExternalStorage="true">
+        android:usesCleartextTraffic="true">
         <activity
             android:name="eichlerjiri.movementtracker.MovementTracker"
             android:exported="true">

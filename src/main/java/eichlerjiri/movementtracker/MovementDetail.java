@@ -16,6 +16,7 @@ import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.Database.HistoryRow;
 import eichlerjiri.movementtracker.Database.LocationRow;
+import eichlerjiri.movementtracker.ui.Exporter;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 import static java.lang.Math.*;
@@ -37,6 +38,7 @@ public class MovementDetail extends Activity {
         recording = getHistoryItem();
         if (recording == null) {
             Toast.makeText(this, "Detail not available", Toast.LENGTH_LONG).show();
+            finish();
             return;
         }
 
@@ -78,7 +80,7 @@ public class MovementDetail extends Activity {
 
         ObjectList<LocationRow> locations = app.database.getLocations(recording.id);
 
-        String text = "from " + formatDateTime(from) + " to " + (sameDay ? formatTime(to) : formatDateTime(to)) + "\n"
+        String text = "from " + formatDateTimeCzech(from) + " to " + (sameDay ? formatTime(to) : formatDateTimeCzech(to)) + "\n"
                 + "locations: " + locations.size + "\n"
                 + "duration: " + formatDuration(duration) + "\n"
                 + "distance: " + formatDistance(distance);
@@ -110,15 +112,28 @@ public class MovementDetail extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (recording != null) {
-            menu.add("delete recording").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                @Override
-                public boolean onMenuItemClick(MenuItem item) {
-                    confirmDeleteRecording();
-                    return true;
-                }
-            });
-        }
+        menu.add("export GPX").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                new Exporter(MovementDetail.this, recording, "gpx").exportTracks();
+                return true;
+            }
+        });
+        menu.add("export TCX").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                new Exporter(MovementDetail.this, recording, "tcx").exportTracks();
+                return true;
+            }
+        });
+
+        menu.add("delete recording").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                confirmDeleteRecording();
+                return true;
+            }
+        });
         return true;
     }
 
