@@ -36,11 +36,11 @@ public class MovementDetail extends Activity {
         super.onCreate(savedInstanceState);
         app = (App) getApplicationContext();
 
-        RecordingRow recording = null;
         long id = getIntent().getLongExtra("id", 0);
         if (id > 0) {
             recording = RecordingModel.getRecording(app, id);
         }
+
         if (recording == null) {
             Toast.makeText(this, "Detail not available", Toast.LENGTH_LONG).show();
             finish();

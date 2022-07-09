@@ -258,7 +258,7 @@ public class Common {
                         "Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n" +
                         "\r\n"));
                 os.write(file);
-                os.write(strToBytes("--" + boundary + "--\r\n"));
+                os.write(strToBytes("\r\n--" + boundary + "--\r\n"));
             }
 
             readHTTPResponse(conn);
