@@ -14,8 +14,9 @@ import android.widget.Toast;
 import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
-import eichlerjiri.movementtracker.Database.HistoryRow;
-import eichlerjiri.movementtracker.Database.LocationRow;
+import eichlerjiri.movementtracker.models.RecordingModel;
+import eichlerjiri.movementtracker.models.RecordingModel.RecordingRow;
+import eichlerjiri.movementtracker.models.RecordingModel.LocationRow;
 import eichlerjiri.movementtracker.ui.Exporter;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
@@ -24,7 +25,7 @@ import static java.lang.Math.*;
 public class MovementDetail extends Activity {
 
     public App app;
-    public HistoryRow recording;
+    public RecordingRow recording;
     public MapComponent map;
     public GeoBoundary geoBoundary;
 
@@ -35,7 +36,11 @@ public class MovementDetail extends Activity {
         super.onCreate(savedInstanceState);
         app = (App) getApplicationContext();
 
-        recording = getHistoryItem();
+        RecordingRow recording = null;
+        long id = getIntent().getLongExtra("id", 0);
+        if (id > 0) {
+            recording = RecordingModel.getRecording(app, id);
+        }
         if (recording == null) {
             Toast.makeText(this, "Detail not available", Toast.LENGTH_LONG).show();
             finish();
@@ -78,7 +83,7 @@ public class MovementDetail extends Activity {
 
         boolean sameDay = isSameDay(from, to);
 
-        ObjectList<LocationRow> locations = app.database.getLocations(recording.id);
+        ObjectList<LocationRow> locations = RecordingModel.getLocations(app, recording.id);
 
         String text = "from " + formatDateTimeCzech(from) + " to " + (sameDay ? formatTime(to) : formatDateTimeCzech(to)) + "\n"
                 + "locations: " + locations.size + "\n"
@@ -150,17 +155,6 @@ public class MovementDetail extends Activity {
         super.onSaveInstanceState(outState);
 
         outState.putBundle("map", map.saveInstanceState());
-    }
-
-    public HistoryRow getHistoryItem() {
-        Bundle b = getIntent().getExtras();
-        if (b != null) {
-            long id = b.getLong("id");
-            if (id > 0) {
-                return app.database.getHistoryItem(id);
-            }
-        }
-        return null;
     }
 
     public void drawLine(ObjectList<LocationRow> locations) {

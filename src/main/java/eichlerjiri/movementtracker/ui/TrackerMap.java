@@ -7,7 +7,8 @@ import eichlerjiri.mapcomponent.MapComponent;
 import eichlerjiri.mapcomponent.utils.DoubleList;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.App;
-import eichlerjiri.movementtracker.Database.LocationRow;
+import eichlerjiri.movementtracker.models.RecordingModel;
+import eichlerjiri.movementtracker.models.RecordingModel.LocationRow;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import eichlerjiri.movementtracker.utils.GeoBoundary;
 
@@ -29,7 +30,7 @@ public class TrackerMap extends MapComponent {
         }
 
         if (app.activeRecordingType != null) {
-            ObjectList<LocationRow> locs = app.database.getLocations(app.activeRecording);
+            ObjectList<LocationRow> locs = RecordingModel.getLocations(app, app.activeRecording);
             for (int i = 0; i < locs.size; i++) {
                 LocationRow row = locs.data[i];
                 pathPositions.add(lonToMercatorX(row.lon), latToMercatorY(row.lat));

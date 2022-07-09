@@ -18,7 +18,8 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import eichlerjiri.mapcomponent.utils.ObjectList;
-import eichlerjiri.movementtracker.Database.HistoryRow;
+import eichlerjiri.movementtracker.models.RecordingModel;
+import eichlerjiri.movementtracker.models.RecordingModel.RecordingRow;
 import eichlerjiri.movementtracker.ui.MovementTypeButton;
 import eichlerjiri.movementtracker.ui.TrackerMap;
 import static eichlerjiri.movementtracker.utils.Common.*;
@@ -35,7 +36,7 @@ public class MovementTracker extends Activity {
     public ListView historyList;
 
     public TextView recordingText;
-    public ObjectList<HistoryRow> historyItems;
+    public ObjectList<RecordingRow> historyItems;
 
     public final ObjectList<MovementTypeButton> buttons = new ObjectList<>(MovementTypeButton.class);
 
@@ -245,10 +246,10 @@ public class MovementTracker extends Activity {
             return;
         }
 
-        historyItems = app.database.getHistory();
+        historyItems = RecordingModel.getRecordings(app);
         String[] items = new String[historyItems.size];
         for (int i = 0; i < items.length; i++) {
-            HistoryRow item = historyItems.data[i];
+            RecordingRow item = historyItems.data[i];
             items[i] = formatDistance(item.distance) + " " + item.movementType + " " + formatDateTimeCzech(item.ts);
         }
 

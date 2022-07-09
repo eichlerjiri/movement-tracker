@@ -13,9 +13,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import eichlerjiri.mapcomponent.utils.ObjectList;
 import eichlerjiri.movementtracker.App;
-import eichlerjiri.movementtracker.Database.HistoryRow;
-import eichlerjiri.movementtracker.Database.LocationRow;
 import eichlerjiri.movementtracker.MovementDetail;
+import eichlerjiri.movementtracker.models.RecordingModel;
+import eichlerjiri.movementtracker.models.RecordingModel.RecordingRow;
+import eichlerjiri.movementtracker.models.RecordingModel.LocationRow;
 import static eichlerjiri.movementtracker.utils.Common.*;
 import java.io.InterruptedIOException;
 import static java.lang.Math.*;
@@ -25,7 +26,7 @@ public class Exporter implements Runnable {
     public final Context c;
     public final App app;
     public final SharedPreferences preferences;
-    public final HistoryRow recording;
+    public final RecordingRow recording;
     public final String format;
 
     public String url;
@@ -36,7 +37,7 @@ public class Exporter implements Runnable {
     public AlertDialog alertDialog;
     public String error = "";
 
-    public Exporter(MovementDetail c, HistoryRow recording, String format) {
+    public Exporter(MovementDetail c, RecordingRow recording, String format) {
         this.c = c;
         app = (App) c.getApplicationContext();
         preferences = c.getSharedPreferences("movement-tracker", Context.MODE_PRIVATE);
@@ -151,7 +152,7 @@ public class Exporter implements Runnable {
         sb.append("<Lap>\n");
         sb.append("<Track>\n");
 
-        ObjectList<LocationRow> locs = app.database.getLocations(recording.id);
+        ObjectList<LocationRow> locs = RecordingModel.getLocations(app, recording.id);
         for (int i = 0; i < locs.size; i++) {
             LocationRow loc = locs.data[i];
 
@@ -205,7 +206,7 @@ public class Exporter implements Runnable {
         sb.append("</type>\n");
         sb.append("<trkseg>\n");
 
-        ObjectList<LocationRow> locs = app.database.getLocations(recording.id);
+        ObjectList<LocationRow> locs = RecordingModel.getLocations(app, recording.id);
         for (int i = 0; i < locs.size; i++) {
             LocationRow loc = locs.data[i];
 
