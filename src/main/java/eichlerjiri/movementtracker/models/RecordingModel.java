@@ -111,7 +111,7 @@ public class RecordingModel {
         public long id;
         public long ts;
         public long tsEnd;
-        public String movementType;
+        public String movementType = "";
         public double distance;
     }
 

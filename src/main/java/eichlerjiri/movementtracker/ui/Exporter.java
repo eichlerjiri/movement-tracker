@@ -55,6 +55,7 @@ public class Exporter implements Runnable {
         urlLabel.setText("URL:");
 
         urlText = new EditText(c);
+        urlText.setSingleLine();
         urlText.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         urlText.setText(url);
 
@@ -63,6 +64,7 @@ public class Exporter implements Runnable {
         filenameLabel.setPadding(0, padding, 0, 0);
 
         filenameText = new EditText(c);
+        filenameText.setSingleLine();
         filenameText.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         filenameText.setText(filename);
 
@@ -80,8 +82,8 @@ public class Exporter implements Runnable {
                 .setPositiveButton("Export", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        url = urlText.getText().toString();
-                        filename = filenameText.getText().toString();
+                        url = urlText.getText().toString().trim();
+                        filename = filenameText.getText().toString().trim();
 
                         alertDialog = new AlertDialog.Builder(c)
                                 .setMessage("Please wait")
@@ -113,10 +115,10 @@ public class Exporter implements Runnable {
                     alertDialog.dismiss();
 
                     if (error.isEmpty()) {
-                        Toast.makeText(c, "Exported " + filename, Toast.LENGTH_LONG).show();
+                        Toast.makeText(c, "Upload OK: " + filename, Toast.LENGTH_LONG).show();
                         preferences.edit().putString("exportUrl", url).apply();
                     } else {
-                        Toast.makeText(c, "Export failed: " + error, Toast.LENGTH_LONG).show();
+                        Toast.makeText(c, error, Toast.LENGTH_LONG).show();
                         exportTracks();
                     }
                 }

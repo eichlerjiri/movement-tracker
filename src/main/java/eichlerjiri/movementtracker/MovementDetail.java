@@ -49,7 +49,7 @@ public class MovementDetail extends Activity {
 
         TextView detailText = new TextView(this);
 
-        int padding = round(4 * getResources().getDisplayMetrics().scaledDensity);
+        int padding = round(8 * getResources().getDisplayMetrics().scaledDensity);
         detailText.setPadding(padding, 0, padding, 0);
 
         LinearLayout detailView = new LinearLayout(this);

@@ -196,6 +196,10 @@ public class Common {
         return str.getBytes(StandardCharsets.UTF_8);
     }
 
+    public static String bytesToStr(byte[] data) {
+        return new String(data, StandardCharsets.UTF_8);
+    }
+
     public static String bytesToHexStr(byte[] data) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
@@ -229,14 +233,9 @@ public class Common {
     }
 
     public static String uploadMultipartFile(String url, byte[] file, String filename) throws InterruptedIOException {
-        if (filename.contains("\"") || filename.contains("\r") || filename.contains("\n")) {
+        if (filename.contains("/") || filename.contains("\"") || filename.contains("\r") || filename.contains("\n")) {
             return "Invalid filename";
         }
-
-        String boundary;
-        do {
-            boundary = "----------------" + bytesToHexStr(randomBytes(8));
-        } while (containsByteArray(file, strToBytes(boundary)));
 
         try {
             URLConnection urlConn = new URL(url).openConnection();
@@ -248,6 +247,11 @@ public class Common {
             if (conn instanceof HttpsURLConnection) {
                 ((HttpsURLConnection) conn).setSSLSocketFactory(prepareSSLSocketFactory());
             }
+
+            String boundary;
+            do {
+                boundary = "----------------" + bytesToHexStr(randomBytes(8));
+            } while (containsByteArray(file, strToBytes(boundary)));
 
             conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
@@ -261,11 +265,17 @@ public class Common {
                 os.write(strToBytes("\r\n--" + boundary + "--\r\n"));
             }
 
-            readHTTPResponse(conn);
-            int code = conn.getResponseCode();
-            if (code != 200) {
-                return code + ": " + conn.getResponseMessage();
+            String response = bytesToStr(readHTTPResponse(conn)).trim();
+            if (conn.getResponseCode() != 200 || !response.equals("Upload OK: " + filename)) {
+                if (response.isEmpty()) {
+                    return "Empty response";
+                }
+                if (response.length() > 100) {
+                    response = response.substring(0, 100).trim();
+                }
+                return response;
             }
+
             return "";
         } catch (InterruptedIOException e) {
             throw e;

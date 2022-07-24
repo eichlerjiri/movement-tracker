@@ -71,7 +71,7 @@ public class MovementTracker extends Activity {
 
         recordingText = new TextView(this);
 
-        int padding = round(4 * getResources().getDisplayMetrics().scaledDensity);
+        int padding = round(8 * getResources().getDisplayMetrics().scaledDensity);
         recordingText.setPadding(padding, 0, padding, 0);
 
         buttons.add(new MovementTypeButton(this, "walk"));
