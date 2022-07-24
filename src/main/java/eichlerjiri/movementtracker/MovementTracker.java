@@ -143,7 +143,7 @@ public class MovementTracker extends Activity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        app.unregisterMovementTracker();
+        app.unregisterMovementTracker(this);
 
         map.close();
     }

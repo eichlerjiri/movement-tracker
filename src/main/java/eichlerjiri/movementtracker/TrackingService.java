@@ -71,7 +71,7 @@ public class TrackingService extends Service {
 
     @Override
     public void onDestroy() {
-        app.unregisterTrackingService();
+        app.unregisterTrackingService(this);
 
         locationManager.removeUpdates(locationListener);
     }

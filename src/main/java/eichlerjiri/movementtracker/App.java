@@ -60,16 +60,20 @@ public class App extends Application {
         trackingService = service;
     }
 
-    public void unregisterTrackingService() {
-        trackingService = null;
+    public void unregisterTrackingService(TrackingService service) {
+        if (trackingService == service) {
+            trackingService = null;
+        }
     }
 
     public void registerMovementTracker(MovementTracker movementTracker) {
         this.movementTracker = movementTracker;
     }
 
-    public void unregisterMovementTracker() {
-        this.movementTracker = null;
+    public void unregisterMovementTracker(MovementTracker movementTracker) {
+        if (this.movementTracker == movementTracker) {
+            this.movementTracker = null;
+        }
     }
 
     public SQLiteDatabase sqlite() {
